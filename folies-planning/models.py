@@ -12,15 +12,19 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
-    dj_name = db.Column(db.String(100), nullable=False)  # Nom de scène
+    dj_name = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(20))
     is_admin = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relations
+    # Relations - AJOUTER foreign_keys
     availabilities = db.relationship('Availability', backref='user', lazy=True, cascade='all, delete-orphan')
-    assignments = db.relationship('Assignment', backref='user', lazy=True, cascade='all, delete-orphan')
+    assignments = db.relationship('Assignment', 
+                                  foreign_keys='Assignment.user_id',
+                                  backref='user', 
+                                  lazy=True, 
+                                  cascade='all, delete-orphan')
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -58,7 +62,7 @@ class Assignment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
     notes = db.Column(db.String(200))
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))  # Admin qui a créé
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
