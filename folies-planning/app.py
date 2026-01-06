@@ -1,15 +1,23 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
+from flask import Flask, render_template, redirect, url_for, flash, request, jsonify, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
 from models import db, User, Availability, Assignment
+from notifications import mail, send_assignment_notification, send_reminder_notification, send_admin_alert
 from datetime import datetime, timedelta, date
 import calendar as cal
+from io import BytesIO
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
 # Initialisation
 db.init_app(app)
+mail.init_app(app)  # ← AJOUTER CETTE LIGNE
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -237,15 +245,6 @@ def toggle_availability():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
-
-# Routes Admin
-@app.route('/admin/dashboard')
-@login_required
-def admin_dashboard():
-    if not current_user.is_admin:
-        flash('Accès refusé.', 'danger')
-        return redirect(url_for('dj_dashboard'))
-    return render_template('admin/dashboard.html')
 
 # Helper function pour le calendrier admin
 def generate_admin_calendar(year, month):
@@ -505,12 +504,15 @@ def admin_assign_dj():
         db.session.add(assignment)
         db.session.commit()
         
+        # Envoyer notification email
+        dj = User.query.get(dj_id)
+        send_assignment_notification(app._get_current_object(), dj, assignment)
+        
         return jsonify({'success': True})
         
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
-
 # Route pour toggle status DJ
 @app.route('/admin/toggle-dj-status', methods=['POST'])
 @login_required
@@ -637,6 +639,205 @@ def admin_unassign_dj():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
+    
+# Route calendrier DJ individuel (admin)
+@app.route('/admin/dj-calendar/<int:dj_id>')
+@login_required
+def admin_dj_calendar(dj_id):
+    if not current_user.is_admin:
+        flash('Accès refusé.', 'danger')
+        return redirect(url_for('dj_dashboard'))
+    
+    dj = User.query.get_or_404(dj_id)
+    if dj.is_admin:
+        flash('Impossible d\'afficher le calendrier d\'un admin.', 'warning')
+        return redirect(url_for('admin_dashboard'))
+    
+    # Paramètres de date
+    month = request.args.get('month', type=int, default=datetime.now().month)
+    year = request.args.get('year', type=int, default=datetime.now().year)
+    
+    today = date.today()
+    first_day = date(year, month, 1)
+    last_day = date(year, month, cal.monthrange(year, month)[1])
+    
+    # Stats du DJ
+    disponibilites_mois = Availability.query.filter_by(
+        user_id=dj_id,
+        is_available=True
+    ).filter(
+        Availability.date >= first_day,
+        Availability.date <= last_day
+    ).count()
+    
+    sets_venir = Assignment.query.filter_by(user_id=dj_id).filter(
+        Assignment.date >= today
+    ).count()
+    
+    sets_passes = Assignment.query.filter_by(user_id=dj_id).filter(
+        Assignment.date < today
+    ).count()
+    
+    # Taux de disponibilité (sur les 30 derniers jours)
+    thirty_days_ago = today - timedelta(days=30)
+    total_days = 30
+    days_available = Availability.query.filter_by(
+        user_id=dj_id,
+        is_available=True
+    ).filter(
+        Availability.date >= thirty_days_ago,
+        Availability.date < today
+    ).count()
+    
+    taux_dispo = int((days_available / total_days) * 100) if total_days > 0 else 0
+    
+    stats = {
+        'disponibilites_mois': disponibilites_mois,
+        'sets_venir': sets_venir,
+        'sets_passes': sets_passes,
+        'taux_dispo': taux_dispo
+    }
+    
+    # Calendrier
+    calendar_data = generate_calendar(year, month, dj_id)
+    
+    # Prochains sets
+    upcoming_sets = Assignment.query.filter_by(user_id=dj_id).filter(
+        Assignment.date >= today
+    ).order_by(Assignment.date).limit(5).all()
+    
+    # Sets passés
+    past_sets = Assignment.query.filter_by(user_id=dj_id).filter(
+        Assignment.date < today
+    ).order_by(Assignment.date.desc()).limit(5).all()
+    
+    months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+              'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+    
+    return render_template('admin/dj_calendar.html',
+                         dj=dj,
+                         stats=stats,
+                         calendar_data=calendar_data,
+                         upcoming_sets=upcoming_sets,
+                         past_sets=past_sets,
+                         current_month=month,
+                         current_year=year,
+                         months=months,
+                         today=today)
+
+def generate_planning_pdf(year, month):
+    """Générer un PDF du planning mensuel"""
+    buffer = BytesIO()
+    
+    # Créer le document PDF en paysage
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+    elements = []
+    
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#6366f1'),
+        spaceAfter=30,
+        alignment=1  # Centré
+    )
+    
+    # Titre
+    months_fr = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+    title = Paragraph(f"🎵 LES FOLIES - Planning {months_fr[month-1]} {year}", title_style)
+    elements.append(title)
+    elements.append(Spacer(1, 1*cm))
+    
+    # Récupérer les assignments du mois
+    first_day = date(year, month, 1)
+    last_day = date(year, month, cal.monthrange(year, month)[1])
+    
+    assignments = Assignment.query.filter(
+        Assignment.date >= first_day,
+        Assignment.date <= last_day
+    ).order_by(Assignment.date).all()
+    
+    # Créer le tableau
+    data = [['Date', 'Jour', 'DJ', 'Notes']]
+    
+    for assignment in assignments:
+        date_str = assignment.date.strftime('%d/%m/%Y')
+        jour = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'][assignment.date.weekday()]
+        dj_name = assignment.user.dj_name
+        notes = assignment.notes or '-'
+        
+        data.append([date_str, jour, dj_name, notes])
+    
+    if len(data) == 1:
+        data.append(['Aucun set assigné', '', '', ''])
+    
+    # Style du tableau
+    table = Table(data, colWidths=[3*cm, 3*cm, 5*cm, 8*cm])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6366f1')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+    ]))
+    
+    elements.append(table)
+    elements.append(Spacer(1, 1*cm))
+    
+    # Footer
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.grey,
+        alignment=1
+    )
+    footer = Paragraph(f"Généré le {datetime.now().strftime('%d/%m/%Y à %H:%M')} - © 2026 LES FOLIES", footer_style)
+    elements.append(footer)
+    
+    # Build PDF
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return buffer
+
+# Route pour export PDF du planning
+@app.route('/admin/export-planning-pdf')
+@login_required
+def admin_export_planning_pdf():
+    if not current_user.is_admin:
+        flash('Accès refusé.', 'danger')
+        return redirect(url_for('dj_dashboard'))
+    
+    month = request.args.get('month', type=int, default=datetime.now().month)
+    year = request.args.get('year', type=int, default=datetime.now().year)
+    
+    try:
+        pdf_buffer = generate_planning_pdf(year, month)
+        
+        months_fr = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                     'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+        filename = f"Planning_LES_FOLIES_{months_fr[month-1]}_{year}.pdf"
+        
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        flash(f'Erreur lors de la génération du PDF: {str(e)}', 'danger')
+        return redirect(url_for('admin_dashboard'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=3000)
