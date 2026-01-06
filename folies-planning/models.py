@@ -5,6 +5,39 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
+def calculate_tarif(date, time_slot):
+    """Calculer le tarif selon le jour et le créneau"""
+    day_of_week = date.weekday()  # 0=Lundi, 3=Jeudi, 4=Vendredi, 5=Samedi
+    
+    # Jeudi (3)
+    if day_of_week == 3:
+        if time_slot == 'complete':
+            return 120
+        elif time_slot == 'warmup':
+            return 40
+        elif time_slot == 'peaktime':
+            return 80
+    
+    # Vendredi (4) et Samedi (5)
+    elif day_of_week in [4, 5]:
+        if time_slot == 'complete':
+            return 200
+        elif time_slot == 'warmup':
+            return 50
+        elif time_slot == 'peaktime':
+            return 150
+    
+    # Autres jours (Dimanche à Mercredi)
+    else:
+        if time_slot == 'complete':
+            return 100
+        elif time_slot == 'warmup':
+            return 30
+        elif time_slot == 'peaktime':
+            return 70
+    
+    return 0
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     
@@ -36,41 +69,44 @@ class User(UserMixin, db.Model):
         return f'<User {self.username} - {self.dj_name}>'
 
 class Availability(db.Model):
-    __tablename__ = 'availabilities'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    date = db.Column(db.Date, nullable=False)
-    is_available = db.Column(db.Boolean, default=True)
-    notes = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Index pour recherche rapide
-    __table_args__ = (
-        db.UniqueConstraint('user_id', 'date', name='unique_user_date'),
-        db.Index('idx_date', 'date'),
-    )
-    
-    def __repr__(self):
-        return f'<Availability {self.user.dj_name} - {self.date}>'
+            __tablename__ = 'availabilities'
+            
+            id = db.Column(db.Integer, primary_key=True)
+            user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+            date = db.Column(db.Date, nullable=False)
+            is_available = db.Column(db.Boolean, default=True)
+            time_slot = db.Column(db.String(20), default='complete')  # 'complete', 'warmup', 'peaktime'
+            notes = db.Column(db.String(200))
+            created_at = db.Column(db.DateTime, default=datetime.utcnow)
+            updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+            
+            # Index et contraintes
+            __table_args__ = (
+                db.UniqueConstraint('user_id', 'date', name='unique_user_date_availability'),
+                db.Index('idx_availability_date', 'date'),
+            )
+            
+            def __repr__(self):
+                return f'<Availability {self.user.dj_name} - {self.date} - {self.time_slot}>'
 
 class Assignment(db.Model):
-    __tablename__ = 'assignments'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    date = db.Column(db.Date, nullable=False)
-    notes = db.Column(db.String(200))
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Index
-    __table_args__ = (
-        db.UniqueConstraint('date', name='unique_date_assignment'),
-        db.Index('idx_assignment_date', 'date'),
-    )
-    
-    def __repr__(self):
-        return f'<Assignment {self.user.dj_name} - {self.date}>'
+            __tablename__ = 'assignments'
+            
+            id = db.Column(db.Integer, primary_key=True)
+            user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+            date = db.Column(db.Date, nullable=False)
+            time_slot = db.Column(db.String(20), default='complete')  # 'complete', 'warmup', 'peaktime'
+            tarif = db.Column(db.Integer, default=0)  # Tarif calculé automatiquement
+            notes = db.Column(db.String(200))
+            created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+            created_at = db.Column(db.DateTime, default=datetime.utcnow)
+            updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+            
+            # Index
+            __table_args__ = (
+                db.UniqueConstraint('date', 'time_slot', name='unique_date_timeslot_assignment'),
+                db.Index('idx_assignment_date', 'date'),
+            )
+            
+            def __repr__(self):
+                return f'<Assignment {self.user.dj_name} - {self.date} - {self.time_slot} - {self.tarif}€>'

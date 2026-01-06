@@ -70,8 +70,10 @@
             <button class="nav-link" id="djs-tab" data-bs-toggle="tab" data-bs-target="#djs" type="button">
                 <i class="fas fa-users me-2"></i>Gestion DJs
             </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button">
-                    <i class="fas fa-user-clock me-2"></i>Demandes ({{ pending_count }})
+                <i class="fas fa-user-clock me-2"></i>Demandes ({{ pending_count }})
             </button>
         </li>
     </ul>
@@ -87,7 +89,7 @@
                         <div class="col-md-6">
                             <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Planning du Mois</h5>
                         </div>
-                       <div class="col-md-6">
+                        <div class="col-md-6">
                             <div class="d-flex justify-content-end align-items-center gap-2">
                                 <form method="GET" class="d-flex align-items-center gap-2">
                                     <select name="month" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
@@ -116,10 +118,11 @@
                 <div class="card-body">
                     <!-- Légende -->
                     <div class="mb-3 d-flex gap-3 flex-wrap">
-                        <span class="badge" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);"><i class="fas fa-check me-1"></i>Assigné</span>
-                        <span class="badge bg-success"><i class="fas fa-users me-1"></i>Plusieurs dispos</span>
-                        <span class="badge bg-warning text-dark"><i class="fas fa-user me-1"></i>1 seul dispo</span>
-                        <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Aucun dispo</span>
+                        <span class="badge" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);"><i class="fas fa-music me-1"></i>Assigné</span>
+                        <span class="badge bg-success"><i class="fas fa-moon me-1"></i>Complète</span>
+                        <span class="badge bg-info"><i class="fas fa-sunrise me-1"></i>Warm-up</span>
+                        <span class="badge bg-warning text-dark"><i class="fas fa-fire me-1"></i>Peak time</span>
+                        <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Aucun</span>
                         <span class="badge bg-secondary"><i class="fas fa-calendar me-1"></i>Passé</span>
                     </div>
 
@@ -148,24 +151,39 @@
                                              onclick="showDayDetails('{{ day.date }}')">
                                             <div class="fw-bold mb-2">{{ day.day }}</div>
                                             
-                                            {% if day.is_assigned %}
-                                            <div class="badge w-100" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
-                                                <i class="fas fa-music"></i> {{ day.assigned_dj }}
-                                            </div>
+                                            {% if day.assignments %}
+                                                {% for assignment in day.assignments %}
+                                                <div class="badge w-100 mb-1" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); font-size: 0.7rem;">
+                                                    <i class="fas fa-music"></i> {{ assignment.user.dj_name }}
+                                                    {% if assignment.time_slot == 'warmup' %}🌅
+                                                    {% elif assignment.time_slot == 'peaktime' %}🔥
+                                                    {% elif assignment.time_slot == 'complete' %}🌙
+                                                    {% endif %}
+                                                </div>
+                                                {% endfor %}
                                             {% elif day.is_past %}
                                             <div class="badge bg-secondary w-100">Passé</div>
-                                            {% elif day.available_count > 1 %}
-                                            <div class="badge bg-success w-100">
-                                                <i class="fas fa-users"></i> {{ day.available_count }} dispos
-                                            </div>
-                                            {% elif day.available_count == 1 %}
-                                            <div class="badge bg-warning text-dark w-100">
-                                                <i class="fas fa-user"></i> 1 dispo
-                                            </div>
                                             {% else %}
-                                            <div class="badge bg-danger w-100">
-                                                <i class="fas fa-times"></i> Aucun
-                                            </div>
+                                                {% if day.complete_count > 0 %}
+                                                <div class="badge bg-success w-100 mb-1" style="font-size: 0.7rem;">
+                                                    <i class="fas fa-moon"></i> {{ day.complete_count }} complète(s)
+                                                </div>
+                                                {% endif %}
+                                                {% if day.warmup_count > 0 %}
+                                                <div class="badge bg-info w-100 mb-1" style="font-size: 0.7rem;">
+                                                    <i class="fas fa-sunrise"></i> {{ day.warmup_count }} warm-up(s)
+                                                </div>
+                                                {% endif %}
+                                                {% if day.peaktime_count > 0 %}
+                                                <div class="badge bg-warning text-dark w-100 mb-1" style="font-size: 0.7rem;">
+                                                    <i class="fas fa-fire"></i> {{ day.peaktime_count }} peak(s)
+                                                </div>
+                                                {% endif %}
+                                                {% if day.warmup_count == 0 and day.peaktime_count == 0 and day.complete_count == 0 %}
+                                                <div class="badge bg-danger w-100">
+                                                    <i class="fas fa-times"></i> Aucun
+                                                </div>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                         {% endif %}
@@ -279,52 +297,53 @@
                             </tbody>
                         </table>
                     </div>
-                    <!-- Demandes d'inscription Tab -->
-                    <div class="tab-pane fade" id="pending" role="tabpanel">
-                        <div class="card shadow-lg">
-                            <div class="card-header bg-info text-white">
-                                <h5 class="mb-0"><i class="fas fa-user-clock me-2"></i>Demandes d'inscription en attente</h5>
-                            </div>
-                            <div class="card-body">
-                                {% if pending_djs %}
-                                <div class="list-group">
-                                    {% for dj in pending_djs %}
-                                    <div class="list-group-item">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-8">
-                                                <h6 class="mb-1 fw-bold">
-                                                    <i class="fas fa-headphones text-info me-2"></i>{{ dj.dj_name }}
-                                                </h6>
-                                                <p class="mb-0 small text-muted">
-                                                    <i class="fas fa-user me-1"></i>{{ dj.username }} | 
-                                                    <i class="fas fa-envelope me-1"></i>{{ dj.email }}
-                                                    {% if dj.phone %} | <i class="fas fa-phone me-1"></i>{{ dj.phone }}{% endif %}
-                                                </p>
-                                                <p class="mb-0 small text-muted">
-                                                    <i class="fas fa-clock me-1"></i>Inscrit le {{ dj.created_at.strftime('%d/%m/%Y à %H:%M') }}
-                                                </p>
-                                            </div>
-                                            <div class="col-md-4 text-end">
-                                                <button class="btn btn-success btn-sm" onclick="approveDJ({{ dj.id }})">
-                                                    <i class="fas fa-check me-1"></i>Approuver
-                                                </button>
-                                                <button class="btn btn-danger btn-sm" onclick="rejectDJ({{ dj.id }})">
-                                                    <i class="fas fa-times me-1"></i>Refuser
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Demandes d'inscription Tab -->
+        <div class="tab-pane fade" id="pending" role="tabpanel">
+            <div class="card shadow-lg">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-clock me-2"></i>Demandes d'inscription en attente</h5>
+                </div>
+                <div class="card-body">
+                    {% if pending_djs %}
+                    <div class="list-group">
+                        {% for dj in pending_djs %}
+                        <div class="list-group-item">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h6 class="mb-1 fw-bold">
+                                        <i class="fas fa-headphones text-info me-2"></i>{{ dj.dj_name }}
+                                    </h6>
+                                    <p class="mb-0 small text-muted">
+                                        <i class="fas fa-user me-1"></i>{{ dj.username }} | 
+                                        <i class="fas fa-envelope me-1"></i>{{ dj.email }}
+                                        {% if dj.phone %} | <i class="fas fa-phone me-1"></i>{{ dj.phone }}{% endif %}
+                                    </p>
+                                    <p class="mb-0 small text-muted">
+                                        <i class="fas fa-clock me-1"></i>Inscrit le {{ dj.created_at.strftime('%d/%m/%Y à %H:%M') }}
+                                    </p>
                                 </div>
-                                {% else %}
-                                <div class="text-center py-5">
-                                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-                                    <p class="text-muted">Aucune demande en attente</p>
+                                <div class="col-md-4 text-end">
+                                    <button class="btn btn-success btn-sm" onclick="approveDJ({{ dj.id }})">
+                                        <i class="fas fa-check me-1"></i>Approuver
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="rejectDJ({{ dj.id }})">
+                                        <i class="fas fa-times me-1"></i>Refuser
+                                    </button>
                                 </div>
-                                {% endif %}
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                        <p class="text-muted">Aucune demande en attente</p>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -392,17 +411,19 @@
 {% block extra_css %}
 <style>
 .calendar-day-admin {
-    border: 2px solid #e2e8f0;
+    border: 2px solid var(--border);
     border-radius: 8px;
-    padding: 15px 5px;
-    min-height: 100px;
+    padding: 10px 5px;
+    min-height: 110px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s;
+    background: var(--bg-primary);
 }
 
-.calendar-day-admin:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+.calendar-day-admin:hover:not(.past) {
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px var(--shadow);
+    transform: translateY(-2px);
 }
 </style>
 {% endblock %}
@@ -477,13 +498,14 @@ function deleteDJ(djId) {
 function viewDJCalendar(djId) {
     window.location.href = `/admin/dj-calendar/${djId}`;
 }
-function unassignDJ(date) {
+
+function unassignDJ(date, timeSlot) {
     if (!confirm('Confirmer le retrait de cette assignation ?')) return;
     
     fetch('/admin/unassign-dj', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({date: date})
+        body: JSON.stringify({date: date, time_slot: timeSlot})
     })
     .then(response => response.json())
     .then(data => {
@@ -494,6 +516,7 @@ function unassignDJ(date) {
         }
     });
 }
+
 function approveDJ(djId) {
     if (!confirm('Approuver ce DJ ?')) return;
     
