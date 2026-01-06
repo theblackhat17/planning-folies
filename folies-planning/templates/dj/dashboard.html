@@ -1,380 +1,188 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard Admin - LES FOLIES{% endblock %}
+{% block title %}Dashboard DJ - {{ current_user.dj_name }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-5">
+<div class="container py-5">
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-md-12">
-            <h1 class="display-5 fw-bold text-white">
-                <i class="fas fa-chart-line me-3"></i>Dashboard Administrateur
+            <h1 class="display-5 fw-bold">
+                <i class="fas fa-headphones me-3"></i>Bienvenue, {{ current_user.dj_name }}
             </h1>
-            <p class="text-white-50">Gestion globale des plannings et des DJs</p>
+            <p class="text-secondary">Gérez vos disponibilités et consultez votre planning</p>
         </div>
     </div>
 
     <!-- Stats Cards -->
     <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="card dashboard-card fade-in bg-primary text-white">
+        <div class="col-md-4 mb-3">
+            <div class="card dashboard-card fade-in">
                 <div class="card-body text-center">
-                    <i class="fas fa-users fa-3x mb-3"></i>
-                    <h3 class="fw-bold">{{ stats.total_djs }}</h3>
-                    <p class="mb-0">DJs Actifs</p>
+                    <i class="fas fa-calendar-check fa-3x text-success mb-3"></i>
+                    <h3 class="fw-bold">{{ stats.disponibilites }}</h3>
+                    <p class="text-muted mb-0">Disponibilités ce mois</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card dashboard-card fade-in bg-success text-white" style="animation-delay: 0.1s;">
+        <div class="col-md-4 mb-3">
+            <div class="card dashboard-card fade-in" style="animation-delay: 0.1s;">
                 <div class="card-body text-center">
-                    <i class="fas fa-calendar-check fa-3x mb-3"></i>
-                    <h3 class="fw-bold">{{ stats.assignments_month }}</h3>
-                    <p class="mb-0">Sets ce mois</p>
+                    <i class="fas fa-music fa-3x text-primary mb-3"></i>
+                    <h3 class="fw-bold">{{ stats.assignments }}</h3>
+                    <p class="text-muted mb-0">Sets assignés</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card dashboard-card fade-in bg-warning text-white" style="animation-delay: 0.2s;">
+        <div class="col-md-4 mb-3">
+            <div class="card dashboard-card fade-in" style="animation-delay: 0.2s;">
                 <div class="card-body text-center">
-                    <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                    <h3 class="fw-bold">{{ stats.conflicts }}</h3>
-                    <p class="mb-0">Conflits à résoudre</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card dashboard-card fade-in bg-danger text-white" style="animation-delay: 0.3s;">
-                <div class="card-body text-center">
-                    <i class="fas fa-times-circle fa-3x mb-3"></i>
-                    <h3 class="fw-bold">{{ stats.unassigned_days }}</h3>
-                    <p class="mb-0">Jours non assignés</p>
+                    <i class="fas fa-star fa-3x text-warning mb-3"></i>
+                    <h3 class="fw-bold">{{ stats.prochains_sets }}</h3>
+                    <p class="text-muted mb-0">Prochains sets</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="planning-tab" data-bs-toggle="tab" data-bs-target="#planning" type="button">
-                <i class="fas fa-calendar-alt me-2"></i>Planning Global
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="conflicts-tab" data-bs-toggle="tab" data-bs-target="#conflicts" type="button">
-                <i class="fas fa-exclamation-triangle me-2"></i>Conflits ({{ stats.conflicts }})
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="djs-tab" data-bs-toggle="tab" data-bs-target="#djs" type="button">
-                <i class="fas fa-users me-2"></i>Gestion DJs
-            </button>
-        </li>
-    </ul>
-
-    <!-- Tab Content -->
-    <div class="tab-content" id="adminTabsContent">
-        
-        <!-- Planning Global Tab -->
-        <div class="tab-pane fade show active" id="planning" role="tabpanel">
-            <div class="card shadow-lg">
-                <div class="card-header bg-dark text-white">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Planning du Mois</h5>
-                        </div>
-                        <div class="col-md-6">
-                            <form method="GET" class="d-flex justify-content-end align-items-center gap-2">
-                                <select name="month" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
-                                    {% for m in range(1, 13) %}
-                                    <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>
-                                        {{ months[m-1] }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                                <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
-                                    {% for y in range(current_year - 1, current_year + 2) %}
-                                    <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
-                                    {% endfor %}
-                                </select>
-                                <a href="{{ url_for('admin_export_planning_pdf', month=current_month, year=current_year) }}" 
-                                   class="btn btn-danger btn-sm" 
-                                   title="Télécharger le planning PDF"
-                                   target="_blank">
-                                    <i class="fas fa-file-pdf me-1"></i>PDF
-                                </a>
-                            </form>
-                        </div>
-                    </div>
+    <!-- Sélection du mois -->
+    <div class="card shadow-lg mb-4">
+        <div class="card-header bg-dark text-white">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Mes Disponibilités</h5>
                 </div>
-                <div class="card-body">
-                    <!-- Légende -->
-                    <div class="mb-3 d-flex gap-3 flex-wrap">
-                        <span class="badge" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);"><i class="fas fa-check me-1"></i>Assigné</span>
-                        <span class="badge bg-success"><i class="fas fa-users me-1"></i>Plusieurs dispos</span>
-                        <span class="badge bg-warning text-dark"><i class="fas fa-user me-1"></i>1 seul dispo</span>
-                        <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Aucun dispo</span>
-                        <span class="badge bg-secondary"><i class="fas fa-calendar me-1"></i>Passé</span>
-                    </div>
-
-                    <!-- Calendrier -->
-                    <div class="table-responsive">
-                        <table class="table table-bordered text-center">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Lun</th>
-                                    <th>Mar</th>
-                                    <th>Mer</th>
-                                    <th>Jeu</th>
-                                    <th>Ven</th>
-                                    <th>Sam</th>
-                                    <th>Dim</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for week in calendar_data %}
-                                <tr>
-                                    {% for day in week %}
-                                    <td class="p-0">
-                                        {% if day %}
-                                        <div class="calendar-day-admin {{ day.status }}" 
-                                             data-date="{{ day.date }}"
-                                             onclick="showDayDetails('{{ day.date }}')">
-                                            <div class="fw-bold mb-2">{{ day.day }}</div>
-                                            
-                                            {% if day.is_assigned %}
-                                            <div class="badge w-100" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
-                                                <i class="fas fa-music"></i> {{ day.assigned_dj }}
-                                            </div>
-                                            {% elif day.is_past %}
-                                            <div class="badge bg-secondary w-100">Passé</div>
-                                            {% elif day.available_count > 1 %}
-                                            <div class="badge bg-success w-100">
-                                                <i class="fas fa-users"></i> {{ day.available_count }} dispos
-                                            </div>
-                                            {% elif day.available_count == 1 %}
-                                            <div class="badge bg-warning text-dark w-100">
-                                                <i class="fas fa-user"></i> 1 dispo
-                                            </div>
-                                            {% else %}
-                                            <div class="badge bg-danger w-100">
-                                                <i class="fas fa-times"></i> Aucun
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                        {% endif %}
-                                    </td>
-                                    {% endfor %}
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="col-md-6">
+                    <form method="GET" class="d-flex justify-content-end">
+                        <select name="month" class="form-select form-select-sm me-2" onchange="this.form.submit()" style="width: auto;">
+                            {% for m in range(1, 13) %}
+                            <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>
+                                {{ months[m-1] }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+                            {% for y in range(current_year - 1, current_year + 2) %}
+                            <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
                 </div>
             </div>
         </div>
+        <div class="card-body">
+            <!-- Légende -->
+            <div class="mb-3 d-flex gap-3 flex-wrap">
+                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Disponible</span>
+                <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Non disponible</span>
+                <span class="badge" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);"><i class="fas fa-star me-1"></i>Assigné</span>
+                <span class="badge bg-secondary"><i class="fas fa-calendar me-1"></i>Passé</span>
+            </div>
 
-        <!-- Conflits Tab -->
-        <div class="tab-pane fade" id="conflicts" role="tabpanel">
-            <div class="card shadow-lg">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Dates avec Plusieurs DJs Disponibles</h5>
-                </div>
-                <div class="card-body">
-                    {% if conflicts_data %}
-                    <div class="list-group">
-                        {% for conflict in conflicts_data %}
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0 fw-bold">
-                                    <i class="fas fa-calendar-day text-warning me-2"></i>
-                                    {{ conflict.date.strftime('%A %d %B %Y') }}
-                                </h6>
-                                <span class="badge bg-warning text-dark">{{ conflict.djs|length }} DJs disponibles</span>
-                            </div>
-                            <div class="d-flex flex-wrap gap-2">
-                                {% for dj in conflict.djs %}
-                                <button class="btn btn-sm btn-outline-primary" onclick="assignDJ('{{ conflict.date }}', {{ dj.id }})">
-                                    <i class="fas fa-user-check me-1"></i>Assigner {{ dj.dj_name }}
-                                </button>
-                                {% endfor %}
-                            </div>
-                        </div>
+            <!-- Calendrier -->
+            <div class="table-responsive">
+                <table class="table table-bordered text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Lun</th>
+                            <th>Mar</th>
+                            <th>Mer</th>
+                            <th>Jeu</th>
+                            <th>Ven</th>
+                            <th>Sam</th>
+                            <th>Dim</th>
+                        </tr>
+                    </thead>
+                    <tbody id="calendar-body">
+                        {% for week in calendar_data %}
+                        <tr>
+                            {% for day in week %}
+                            <td class="p-0">
+                                {% if day %}
+                                <div class="calendar-day {{ day.status }}" 
+                                     data-date="{{ day.date }}"
+                                     data-available="{{ day.is_available }}"
+                                     onclick="toggleAvailability('{{ day.date }}', {{ day.is_available|tojson }})">
+                                    <div class="fw-bold mb-1">{{ day.day }}</div>
+                                    {% if day.is_assigned %}
+                                    <span class="badge" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+                                        <i class="fas fa-star"></i> Assigné
+                                    </span>
+                                    {% elif day.is_past %}
+                                    <span class="badge bg-secondary">Passé</span>
+                                    {% elif day.is_available %}
+                                    <span class="badge bg-success"><i class="fas fa-check"></i> Dispo</span>
+                                    {% else %}
+                                    <span class="badge bg-danger"><i class="fas fa-times"></i> Non dispo</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
                         {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-                        <p class="text-muted">Aucun conflit ! Tous les jours ont 0 ou 1 DJ disponible.</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Gestion DJs Tab -->
-        <div class="tab-pane fade" id="djs" role="tabpanel">
-            <div class="card shadow-lg">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>Liste des DJs</h5>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addDJModal">
-                        <i class="fas fa-plus me-2"></i>Ajouter un DJ
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Nom de scène</th>
-                                    <th class="mobile-hide">Username</th>
-                                    <th class="mobile-hide">Email</th>
-                                    <th class="mobile-hide">Téléphone</th>
-                                    <th>Dispos</th>
-                                    <th>Sets</th>
-                                    <th>Statut</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for dj in all_djs %}
-                                <tr>
-                                    <td class="fw-bold">
-                                        <i class="fas fa-headphones text-primary me-2"></i>{{ dj.dj_name }}
-                                        <div class="d-md-none small text-muted">{{ dj.username }}</div>
-                                    </td>
-                                    <td class="mobile-hide">{{ dj.username }}</td>
-                                    <td class="mobile-hide">{{ dj.email }}</td>
-                                    <td class="mobile-hide">{{ dj.phone or '-' }}</td>
-                                    <td><span class="badge bg-info">{{ dj.disponibilites }}</span></td>
-                                    <td><span class="badge bg-success">{{ dj.assignments }}</span></td>
-                                    <td>
-                                        {% if dj.is_active %}
-                                        <span class="badge bg-success">Actif</span>
-                                        {% else %}
-                                        <span class="badge bg-danger">Inactif</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-primary" onclick="viewDJCalendar({{ dj.id }})" title="Calendrier">
-                                                <i class="fas fa-calendar"></i>
-                                            </button>
-                                            <button class="btn btn-outline-warning" onclick="toggleDJStatus({{ dj.id }}, {{ dj.is_active|tojson }})" title="Activer/Désactiver">
-                                                <i class="fas fa-power-off"></i>
-                                            </button>
-                                            <button class="btn btn-outline-danger" onclick="deleteDJ({{ dj.id }})" title="Supprimer">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Modal Ajouter DJ -->
-<div class="modal fade" id="addDJModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Ajouter un DJ</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    <!-- Prochains sets -->
+    <div class="card shadow-lg">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Mes Prochains Sets</h5>
+        </div>
+        <div class="card-body">
+            {% if upcoming_sets %}
+            <div class="list-group">
+                {% for assignment in upcoming_sets %}
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1 fw-bold">
+                                <i class="fas fa-music text-primary me-2"></i>
+                                {{ assignment.date.strftime('%A %d %B %Y') }}
+                            </h6>
+                            {% if assignment.notes %}
+                            <p class="mb-0 text-muted small">
+                                <i class="fas fa-info-circle me-1"></i>{{ assignment.notes }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <span class="badge bg-primary">Dans {{ (assignment.date - today).days }} jours</span>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
-            <form method="POST" action="{{ url_for('admin_add_dj') }}">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Nom de scène *</label>
-                        <input type="text" class="form-control" name="dj_name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Username *</label>
-                        <input type="text" class="form-control" name="username" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Email *</label>
-                        <input type="email" class="form-control" name="email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Téléphone</label>
-                        <input type="tel" class="form-control" name="phone" placeholder="+33 6 00 00 00 00">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Mot de passe *</label>
-                        <input type="password" class="form-control" name="password" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>Créer le compte
-                    </button>
-                </div>
-            </form>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                <p class="text-muted">Aucun set assigné pour le moment</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
-
-<!-- Modal Détails Jour -->
-<div class="modal fade" id="dayDetailsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title" id="dayDetailsTitle"></h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="dayDetailsBody">
-                <!-- Chargé dynamiquement -->
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_css %}
-<style>
-.calendar-day-admin {
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 15px 5px;
-    min-height: 100px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.calendar-day-admin:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-}
-</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function showDayDetails(date) {
-    fetch(`/admin/day-details?date=${date}`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('dayDetailsTitle').textContent = data.date_formatted;
-            document.getElementById('dayDetailsBody').innerHTML = data.html;
-            new bootstrap.Modal(document.getElementById('dayDetailsModal')).show();
-        });
-}
+function toggleAvailability(date, currentStatus) {
+    // Empêcher modification des dates passées et assignées
+    const dayElement = document.querySelector(`[data-date="${date}"]`);
+    if (dayElement.classList.contains('past') || dayElement.classList.contains('assigned')) {
+        return;
+    }
 
-function assignDJ(date, djId) {
-    if (!confirm('Confirmer l\'assignation de ce DJ ?')) return;
-    
-    fetch('/admin/assign-dj', {
+    fetch('/dj/toggle-availability', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({date: date, dj_id: djId})
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            date: date,
+            is_available: !currentStatus
+        })
     })
     .then(response => response.json())
     .then(data => {
@@ -383,66 +191,11 @@ function assignDJ(date, djId) {
         } else {
             alert('Erreur: ' + data.error);
         }
-    });
-}
-
-function unassignDJ(date) {
-    if (!confirm('Confirmer le retrait de cette assignation ?')) return;
-    
-    fetch('/admin/unassign-dj', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({date: date})
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Erreur: ' + data.error);
-        }
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erreur lors de la mise à jour');
     });
-}
-
-function toggleDJStatus(djId, currentStatus) {
-    const action = currentStatus ? 'désactiver' : 'activer';
-    if (!confirm(`Voulez-vous vraiment ${action} ce DJ ?`)) return;
-    
-    fetch('/admin/toggle-dj-status', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({dj_id: djId})
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Erreur: ' + data.error);
-        }
-    });
-}
-
-function deleteDJ(djId) {
-    if (!confirm('ATTENTION: Supprimer ce DJ supprimera toutes ses données (disponibilités et assignments). Continuer ?')) return;
-    
-    fetch('/admin/delete-dj', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({dj_id: djId})
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Erreur: ' + data.error);
-        }
-    });
-}
-
-function viewDJCalendar(djId) {
-    window.location.href = `/admin/dj-calendar/${djId}`;
 }
 </script>
 {% endblock %}

@@ -174,7 +174,7 @@ def do_register():
             dj_name=dj_name,
             phone=phone,
             is_admin=False,
-            is_active=False  # ← INACTIF par défaut
+            is_active=False
         )
         new_dj.set_password(password)
         
@@ -444,6 +444,7 @@ def admin_dashboard():
     ]
     
     # Liste des DJs avec leurs stats
+   # Liste des DJs avec leurs stats
     all_djs = User.query.filter_by(is_admin=False).all()
     for dj in all_djs:
         dj.disponibilites = Availability.query.filter_by(
@@ -454,7 +455,7 @@ def admin_dashboard():
             Availability.date <= last_day
         ).count()
         
-        dj.assignments = Assignment.query.filter_by(user_id=dj.id).filter(
+        dj.assignments_count = Assignment.query.filter_by(user_id=dj.id).filter(  # ← ERREUR ICI
             Assignment.date >= today
         ).count()
     

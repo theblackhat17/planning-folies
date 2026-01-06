@@ -7,10 +7,10 @@
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-md-12">
-            <h1 class="display-5 fw-bold text-white">
+           <h1 class="display-5 fw-bold">
                 <i class="fas fa-chart-line me-3"></i>Dashboard Administrateur
             </h1>
-            <p class="text-white-50">Gestion globale des plannings et des DJs</p>
+            <p class="text-secondary">Gestion globale des plannings et des DJs</p>
         </div>
     </div>
 
@@ -87,21 +87,29 @@
                         <div class="col-md-6">
                             <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Planning du Mois</h5>
                         </div>
-                        <div class="col-md-6">
-                            <form method="GET" class="d-flex justify-content-end">
-                                <select name="month" class="form-select form-select-sm me-2" onchange="this.form.submit()" style="width: auto;">
-                                    {% for m in range(1, 13) %}
-                                    <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>
-                                        {{ months[m-1] }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                                <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
-                                    {% for y in range(current_year - 1, current_year + 2) %}
-                                    <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
-                                    {% endfor %}
-                                </select>
-                            </form>
+                       <div class="col-md-6">
+                            <div class="d-flex justify-content-end align-items-center gap-2">
+                                <form method="GET" class="d-flex align-items-center gap-2">
+                                    <select name="month" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+                                        {% for m in range(1, 13) %}
+                                        <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>
+                                            {{ months[m-1] }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+                                        {% for y in range(current_year - 1, current_year + 2) %}
+                                        <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                                <a href="{{ url_for('admin_export_planning_pdf', month=current_month, year=current_year) }}" 
+                                   class="btn btn-danger btn-sm" 
+                                   title="Télécharger PDF"
+                                   target="_blank">
+                                    <i class="fas fa-file-pdf me-1"></i>PDF
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -244,8 +252,8 @@
                                     <td class="mobile-hide">{{ dj.username }}</td>
                                     <td class="mobile-hide">{{ dj.email }}</td>
                                     <td class="mobile-hide">{{ dj.phone or '-' }}</td>
-                                    <td><span class="badge bg-info">{{ dj.disponibilites }}</span></td>
-                                    <td><span class="badge bg-success">{{ dj.assignments }}</span></td>
+                                    <td><span class="badge bg-info">{{ dj.disponibilites_count }}</span></td>
+                                    <td><span class="badge bg-success">{{ dj.assignments_count }}</span></td>
                                     <td>
                                         {% if dj.is_active %}
                                         <span class="badge bg-success">Actif</span>
