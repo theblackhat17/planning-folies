@@ -7,6 +7,22 @@
     --text-dark: #1e293b;
     --text-light: #64748b;
     --border-radius: 12px;
+    
+    /* Light mode colors */
+    --bg-color: #f8fafc;
+    --card-bg: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+}
+
+/* Dark mode colors */
+body.dark-mode {
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border-color: #334155;
 }
 
 /* Global */
@@ -20,12 +36,21 @@ body {
     font-family: 'Poppins', sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
+    transition: background 0.3s ease;
+}
+
+body.dark-mode {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
 }
 
 /* Login Page */
 .login-container {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
+}
+
+body.dark-mode .login-container {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
 }
 
 .logo-circle {
@@ -42,11 +67,65 @@ body {
 .card {
     backdrop-filter: blur(10px);
     background: rgba(255, 255, 255, 0.95);
+    border: none;
+    transition: background 0.3s ease;
+}
+
+body.dark-mode .card {
+    background: rgba(30, 41, 59, 0.95);
+    color: var(--text-primary);
+}
+
+body.dark-mode .card-header {
+    background-color: rgba(15, 23, 42, 0.8) !important;
+}
+
+body.dark-mode .table {
+    color: var(--text-primary);
+}
+
+body.dark-mode .table-bordered {
+    border-color: var(--border-color);
+}
+
+body.dark-mode .table-bordered td,
+body.dark-mode .table-bordered th {
+    border-color: var(--border-color);
+}
+
+body.dark-mode .list-group-item {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .modal-content {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+}
+
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+    background-color: rgba(15, 23, 42, 0.5);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .form-control:focus,
+body.dark-mode .form-select:focus {
+    background-color: rgba(15, 23, 42, 0.7);
+    color: var(--text-primary);
 }
 
 .input-group-text {
     background: transparent;
     border-right: none;
+}
+
+body.dark-mode .input-group-text {
+    background-color: rgba(15, 23, 42, 0.5);
+    color: var(--text-primary);
+    border-color: var(--border-color);
 }
 
 .form-control {
@@ -70,6 +149,31 @@ body {
     box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
 }
 
+/* Dark Mode Toggle */
+.dark-mode-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: transform 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.dark-mode-toggle:hover {
+    transform: scale(1.1) rotate(15deg);
+}
+
 /* Navbar */
 .navbar-brand {
     font-size: 1.5rem;
@@ -89,17 +193,26 @@ body {
 }
 
 /* Calendar */
-.calendar-day {
+.calendar-day,
+.calendar-day-admin {
     border: 2px solid #e2e8f0;
     border-radius: 8px;
     padding: 10px;
     cursor: pointer;
     transition: all 0.3s;
+    min-height: 80px;
 }
 
-.calendar-day:hover {
+body.dark-mode .calendar-day,
+body.dark-mode .calendar-day-admin {
+    border-color: var(--border-color);
+}
+
+.calendar-day:hover,
+.calendar-day-admin:hover {
     border-color: var(--primary-color);
     background: rgba(99, 102, 241, 0.05);
+    transform: scale(1.02);
 }
 
 .calendar-day.available {
@@ -107,15 +220,82 @@ body {
     border-color: #22c55e;
 }
 
+body.dark-mode .calendar-day.available {
+    background: rgba(34, 197, 94, 0.2);
+}
+
 .calendar-day.unavailable {
     background: #fee2e2;
     border-color: #ef4444;
 }
 
-.calendar-day.assigned {
+body.dark-mode .calendar-day.unavailable {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.calendar-day.assigned,
+.calendar-day-admin.assigned {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: white;
     font-weight: bold;
+}
+
+.calendar-day.past,
+.calendar-day-admin.past {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    
+    .display-5 {
+        font-size: 1.8rem;
+    }
+    
+    .dashboard-card {
+        margin-bottom: 1rem;
+    }
+    
+    .calendar-day,
+    .calendar-day-admin {
+        padding: 5px;
+        min-height: 60px;
+        font-size: 0.85rem;
+    }
+    
+    .calendar-day .badge,
+    .calendar-day-admin .badge {
+        font-size: 0.7rem;
+        padding: 2px 5px;
+    }
+    
+    .table {
+        font-size: 0.85rem;
+    }
+    
+    .btn-group-sm > .btn {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Hide unnecessary columns on mobile */
+    .mobile-hide {
+        display: none;
+    }
+    
+    /* Stack form elements */
+    .form-select {
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Adjust modal for mobile */
+    .modal-dialog {
+        margin: 0.5rem;
+    }
 }
 
 /* Animations */
@@ -134,9 +314,43 @@ body {
     animation: fadeIn 0.5s ease-in;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .navbar-brand {
-        font-size: 1.2rem;
-    }
+/* Loading Spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1050;
+}
+
+/* Footer */
+footer {
+    margin-top: auto;
+}
+
+body.dark-mode footer {
+    background-color: rgba(15, 23, 42, 0.95) !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-color);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary-color);
 }

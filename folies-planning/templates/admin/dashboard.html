@@ -222,11 +222,11 @@
                             <thead>
                                 <tr>
                                     <th>Nom de scène</th>
-                                    <th>Username</th>
-                                    <th>Email</th>
-                                    <th>Téléphone</th>
-                                    <th>Dispos ce mois</th>
-                                    <th>Sets assignés</th>
+                                    <th class="mobile-hide">Username</th>
+                                    <th class="mobile-hide">Email</th>
+                                    <th class="mobile-hide">Téléphone</th>
+                                    <th>Dispos</th>
+                                    <th>Sets</th>
                                     <th>Statut</th>
                                     <th>Actions</th>
                                 </tr>
@@ -234,10 +234,13 @@
                             <tbody>
                                 {% for dj in all_djs %}
                                 <tr>
-                                    <td class="fw-bold"><i class="fas fa-headphones text-primary me-2"></i>{{ dj.dj_name }}</td>
-                                    <td>{{ dj.username }}</td>
-                                    <td>{{ dj.email }}</td>
-                                    <td>{{ dj.phone or '-' }}</td>
+                                    <td class="fw-bold">
+                                        <i class="fas fa-headphones text-primary me-2"></i>{{ dj.dj_name }}
+                                        <div class="d-md-none small text-muted">{{ dj.username }}</div>
+                                    </td>
+                                    <td class="mobile-hide">{{ dj.username }}</td>
+                                    <td class="mobile-hide">{{ dj.email }}</td>
+                                    <td class="mobile-hide">{{ dj.phone or '-' }}</td>
                                     <td><span class="badge bg-info">{{ dj.disponibilites }}</span></td>
                                     <td><span class="badge bg-success">{{ dj.assignments }}</span></td>
                                     <td>
@@ -249,13 +252,13 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-primary" onclick="viewDJCalendar({{ dj.id }})">
+                                            <button class="btn btn-outline-primary" onclick="viewDJCalendar({{ dj.id }})" title="Calendrier">
                                                 <i class="fas fa-calendar"></i>
                                             </button>
-                                            <button class="btn btn-outline-warning" onclick="toggleDJStatus({{ dj.id }}, {{ dj.is_active|tojson }})">
+                                            <button class="btn btn-outline-warning" onclick="toggleDJStatus({{ dj.id }}, {{ dj.is_active|tojson }})" title="Activer/Désactiver">
                                                 <i class="fas fa-power-off"></i>
                                             </button>
-                                            <button class="btn btn-outline-danger" onclick="deleteDJ({{ dj.id }})">
+                                            <button class="btn btn-outline-danger" onclick="deleteDJ({{ dj.id }})" title="Supprimer">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
