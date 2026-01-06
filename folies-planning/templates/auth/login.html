@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Connexion - LES FOLIES{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="container">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-md-5">
+                <div class="card shadow-lg border-0 rounded-4">
+                    <div class="card-body p-5">
+                        <!-- Logo -->
+                        <div class="text-center mb-4">
+                            <div class="logo-circle mx-auto mb-3">
+                                <i class="fas fa-music fa-3x text-white"></i>
+                            </div>
+                            <h2 class="fw-bold">LES FOLIES</h2>
+                            <p class="text-muted">Planning DJ</p>
+                        </div>
+
+                        <!-- Formulaire -->
+                        <form method="POST" action="{{ url_for('do_login') }}">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Nom d'utilisateur</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" class="form-control" id="username" name="username" required autofocus>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="password" class="form-label">Mot de passe</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                                <label class="form-check-label" for="remember">Se souvenir de moi</label>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                                <i class="fas fa-sign-in-alt me-2"></i>Se connecter
+                            </button>
+                        </form>
+
+                        <!-- Info -->
+                        <div class="text-center mt-4">
+                            <p class="text-muted small">
+                                Pas encore de compte ? Contactez l'administrateur.
+                            </p>
+                        </div>
+
+                        <!-- Démo credentials -->
+                        <div class="alert alert-info mt-3" role="alert">
+                            <strong>Démo:</strong> admin / Folies2026!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
