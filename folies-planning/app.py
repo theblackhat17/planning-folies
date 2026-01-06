@@ -136,6 +136,58 @@ def do_login():
     else:
         flash('Identifiants incorrects.', 'danger')
         return redirect(url_for('login'))
+# Route inscription GET
+@app.route('/register', methods=['GET'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    return render_template('auth/register.html')
+
+# Route inscription POST
+@app.route('/register', methods=['POST'])
+def do_register():
+    dj_name = request.form.get('dj_name')
+    username = request.form.get('username')
+    email = request.form.get('email')
+    phone = request.form.get('phone')
+    password = request.form.get('password')
+    password_confirm = request.form.get('password_confirm')
+    
+    # Validation
+    if password != password_confirm:
+        flash('Les mots de passe ne correspondent pas.', 'danger')
+        return redirect(url_for('register'))
+    
+    if User.query.filter_by(username=username).first():
+        flash('Ce nom d\'utilisateur existe déjà.', 'danger')
+        return redirect(url_for('register'))
+    
+    if User.query.filter_by(email=email).first():
+        flash('Cet email existe déjà.', 'danger')
+        return redirect(url_for('register'))
+    
+    try:
+        # Créer le compte INACTIF (en attente de validation)
+        new_dj = User(
+            username=username,
+            email=email,
+            dj_name=dj_name,
+            phone=phone,
+            is_admin=False,
+            is_active=False  # ← INACTIF par défaut
+        )
+        new_dj.set_password(password)
+        
+        db.session.add(new_dj)
+        db.session.commit()
+        
+        flash('Inscription réussie ! Votre compte sera activé par l\'administrateur.', 'success')
+        return redirect(url_for('login'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erreur lors de l\'inscription: {str(e)}', 'danger')
+        return redirect(url_for('register'))
 
 @app.route('/logout')
 @login_required
@@ -409,11 +461,17 @@ def admin_dashboard():
     months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
               'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
     
+    # Demandes d'inscription en attente
+    pending_djs = User.query.filter_by(is_admin=False, is_active=False).all()
+    pending_count = len(pending_djs)
+    
     return render_template('admin/dashboard.html',
                          stats=stats,
                          calendar_data=calendar_data,
                          conflicts_data=conflicts_data,
                          all_djs=all_djs,
+                         pending_djs=pending_djs,
+                         pending_count=pending_count,
                          current_month=month,
                          current_year=year,
                          months=months)
@@ -556,6 +614,55 @@ def admin_delete_dj():
         db.session.delete(dj)
         db.session.commit()
         
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+# Route pour approuver un DJ
+@app.route('/admin/approve-dj', methods=['POST'])
+@login_required
+def admin_approve_dj():
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    dj_id = data.get('dj_id')
+    
+    try:
+        dj = User.query.get(dj_id)
+        if not dj or dj.is_admin:
+            return jsonify({'success': False, 'error': 'DJ not found'})
+        
+        dj.is_active = True
+        db.session.commit()
+        
+        flash(f'DJ {dj.dj_name} approuvé avec succès !', 'success')
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+# Route pour refuser un DJ
+@app.route('/admin/reject-dj', methods=['POST'])
+@login_required
+def admin_reject_dj():
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    dj_id = data.get('dj_id')
+    
+    try:
+        dj = User.query.get(dj_id)
+        if not dj or dj.is_admin:
+            return jsonify({'success': False, 'error': 'DJ not found'})
+        
+        db.session.delete(dj)
+        db.session.commit()
+        
+        flash(f'Demande de {dj.dj_name} refusée.', 'info')
         return jsonify({'success': True})
         
     except Exception as e:

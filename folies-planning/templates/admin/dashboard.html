@@ -70,6 +70,9 @@
             <button class="nav-link" id="djs-tab" data-bs-toggle="tab" data-bs-target="#djs" type="button">
                 <i class="fas fa-users me-2"></i>Gestion DJs
             </button>
+            <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button">
+                    <i class="fas fa-user-clock me-2"></i>Demandes ({{ pending_count }})
+            </button>
         </li>
     </ul>
 
@@ -268,6 +271,52 @@
                             </tbody>
                         </table>
                     </div>
+                    <!-- Demandes d'inscription Tab -->
+                    <div class="tab-pane fade" id="pending" role="tabpanel">
+                        <div class="card shadow-lg">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="fas fa-user-clock me-2"></i>Demandes d'inscription en attente</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if pending_djs %}
+                                <div class="list-group">
+                                    {% for dj in pending_djs %}
+                                    <div class="list-group-item">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-8">
+                                                <h6 class="mb-1 fw-bold">
+                                                    <i class="fas fa-headphones text-info me-2"></i>{{ dj.dj_name }}
+                                                </h6>
+                                                <p class="mb-0 small text-muted">
+                                                    <i class="fas fa-user me-1"></i>{{ dj.username }} | 
+                                                    <i class="fas fa-envelope me-1"></i>{{ dj.email }}
+                                                    {% if dj.phone %} | <i class="fas fa-phone me-1"></i>{{ dj.phone }}{% endif %}
+                                                </p>
+                                                <p class="mb-0 small text-muted">
+                                                    <i class="fas fa-clock me-1"></i>Inscrit le {{ dj.created_at.strftime('%d/%m/%Y à %H:%M') }}
+                                                </p>
+                                            </div>
+                                            <div class="col-md-4 text-end">
+                                                <button class="btn btn-success btn-sm" onclick="approveDJ({{ dj.id }})">
+                                                    <i class="fas fa-check me-1"></i>Approuver
+                                                </button>
+                                                <button class="btn btn-danger btn-sm" onclick="rejectDJ({{ dj.id }})">
+                                                    <i class="fas fa-times me-1"></i>Refuser
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                                    <p class="text-muted">Aucune demande en attente</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -427,6 +476,41 @@ function unassignDJ(date) {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({date: date})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erreur: ' + data.error);
+        }
+    });
+}
+function approveDJ(djId) {
+    if (!confirm('Approuver ce DJ ?')) return;
+    
+    fetch('/admin/approve-dj', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({dj_id: djId})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erreur: ' + data.error);
+        }
+    });
+}
+
+function rejectDJ(djId) {
+    if (!confirm('ATTENTION: Refuser cette demande supprimera définitivement le compte. Continuer ?')) return;
+    
+    fetch('/admin/reject-dj', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({dj_id: djId})
     })
     .then(response => response.json())
     .then(data => {
