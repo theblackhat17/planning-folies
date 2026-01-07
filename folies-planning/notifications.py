@@ -1,5 +1,5 @@
 from flask_mail import Mail, Message
-from flask import render_template_string
+from flask import render_template_string, render_template
 from datetime import datetime, timedelta, date
 from threading import Thread
 
@@ -166,17 +166,25 @@ def get_admin_alert_email_template(date_str, available_count):
     """
 
 def send_assignment_notification(app, dj, assignment):
-    """Envoyer notification d'assignation à un DJ"""
-    date_str = assignment.date.strftime('%A %d %B %Y')
-    subject = f"🎵 Nouveau Set - {date_str}"
+    """Envoyer notification d'assignation au DJ"""
+    if not app.config.get('SEND_EMAIL_NOTIFICATIONS'):
+        return
     
-    html = get_assignment_email_template(
-        dj_name=dj.dj_name,
-        date_str=date_str,
-        notes=assignment.notes
-    )
-    
-    send_email(app, subject, dj.email, html)
+    with app.app_context():
+        try:
+            msg = Message(
+                subject=f"🎵 Nouveau set à LES FOLIES - {assignment.date.strftime('%d/%m/%Y')}",
+                recipients=[dj.email],  # ← EMAIL DU DJ
+                html=render_template('email/assignment_notification.html', 
+                                    dj=dj, 
+                                    assignment=assignment)
+            )
+            
+            thread = Thread(target=send_async_email, args=(app, msg))
+            thread.start()
+            
+        except Exception as e:
+            print(f"Erreur envoi email assignment: {e}")
 
 def send_reminder_notification(app, dj, assignment, days_left):
     """Envoyer rappel à un DJ"""

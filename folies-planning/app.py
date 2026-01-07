@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, jsonify, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
 from models import db, User, Availability, Assignment, calculate_tarif
@@ -11,6 +11,8 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
+import logging
+from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -23,6 +25,20 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Connectez-vous pour accéder à cette page.'
 
+if not app.debug:
+    file_handler = RotatingFileHandler(
+        '/var/log/folies-planning-auth.log',
+        maxBytes=10240000,
+        backupCount=10
+    )
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    file_handler.setLevel(logging.INFO)
+    app.logger.addHandler(file_handler)
+    app.logger.setLevel(logging.INFO)
+    app.logger.info('LES FOLIES Planning startup')
+    
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -109,35 +125,38 @@ def index():
             return redirect(url_for('dj_dashboard'))
     return redirect(url_for('login'))
 
-@app.route('/login', methods=['GET'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    return render_template('auth/login.html')
-
-@app.route('/login', methods=['POST'])
-def do_login():
-    username = request.form.get('username')
-    password = request.form.get('password')
-    remember = request.form.get('remember', False)
-    
-    user = User.query.filter_by(username=username).first()
-    
-    if user and user.check_password(password):
-        if not user.is_active:
-            flash('Votre compte est désactivé. Contactez l\'administrateur.', 'danger')
-            return redirect(url_for('login'))
-        
-        login_user(user, remember=remember)
-        flash(f'Bienvenue {user.dj_name} !', 'success')
-        
-        if user.is_admin:
+        if current_user.is_admin:
             return redirect(url_for('admin_dashboard'))
-        else:
-            return redirect(url_for('dj_dashboard'))
-    else:
-        flash('Identifiants incorrects.', 'danger')
-        return redirect(url_for('login'))
+        return redirect(url_for('dj_dashboard'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        user = User.query.filter_by(username=username).first()
+        
+        if user and user.check_password(password):
+            if not user.is_active:
+                flash('Votre compte est en attente d\'activation par l\'administrateur.', 'warning')
+                app.logger.warning(f'Login attempt for inactive user: {username} from {request.remote_addr}')
+                return redirect(url_for('login'))
+            
+            login_user(user, remember=True)
+            app.logger.info(f'Successful login: {username} from {request.remote_addr}')
+            
+            next_page = request.args.get('next')
+            if not next_page or url_parse(next_page).netloc != '':
+                next_page = url_for('admin_dashboard') if user.is_admin else url_for('dj_dashboard')
+            return redirect(next_page)
+        
+        # ⚠️ LOGGER L'ÉCHEC POUR FAIL2BAN
+        app.logger.warning(f'Login failed for user: {request.remote_addr}')
+        flash('Nom d\'utilisateur ou mot de passe incorrect', 'danger')
+    
+    return render_template('auth/login.html')
 # Route inscription GET
 @app.route('/register', methods=['GET'])
 def register():
@@ -608,6 +627,18 @@ def admin_assign_dj():
         
         db.session.add(assignment)
         db.session.commit()
+        
+        # ✉️ ENVOI EMAIL DE CONFIRMATION
+        # ✉️ ENVOI EMAIL DE CONFIRMATION
+        if app.config.get('SEND_EMAIL_NOTIFICATIONS', False):
+            try:
+                dj = User.query.get(dj_id)
+                send_assignment_notification(app, dj, assignment)
+                print(f"✅ Email de confirmation envoyé à {dj.email}")
+            except Exception as email_error:
+                print(f"⚠️ Erreur envoi email à {dj.email}: {email_error}")
+                import traceback
+                traceback.print_exc()
         
         return jsonify({'success': True})
         

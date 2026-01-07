@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
+        .info-box { background: white; padding: 20px; border-left: 4px solid #6366f1; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+        .button { display: inline-block; background: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 LES FOLIES</h1>
+            <h2>Nouvelle assignation !</h2>
+        </div>
+        <div class="content">
+            <p>Bonjour <strong>{{ dj.dj_name }}</strong>,</p>
+            
+            <p>Vous avez été assigné pour un set à LES FOLIES !</p>
+            
+            <div class="info-box">
+                <h3>📅 Détails du set</h3>
+                <p><strong>Date :</strong> {{ assignment.date.strftime('%A %d %B %Y') }}</p>
+                <p><strong>Créneau :</strong> 
+                    {% if assignment.time_slot == 'complete' %}
+                        🌙 Soirée complète (00h-6h)
+                    {% elif assignment.time_slot == 'warmup' %}
+                        🌅 Warm-up (00h-2h)
+                    {% elif assignment.time_slot == 'peaktime' %}
+                        🔥 Peak time (2h-6h)
+                    {% endif %}
+                </p>
+                <p><strong>Cachet :</strong> {{ assignment.tarif }}€</p>
+            </div>
+            
+            {% if assignment.notes %}
+            <div class="info-box">
+                <h3>📝 Notes</h3>
+                <p>{{ assignment.notes }}</p>
+            </div>
+            {% endif %}
+            
+            <p>Rendez-vous sur votre dashboard pour voir tous vos sets à venir :</p>
+            <a href="https://planning.tbhone.uk" class="button">Accéder au planning</a>
+            
+            <p style="margin-top: 30px;">À très bientôt ! 🎶</p>
+        </div>
+        <div class="footer">
+            <p>© 2026 LES FOLIES - Planning automatique</p>
+            <p>Ce message a été envoyé automatiquement, merci de ne pas y répondre.</p>
+        </div>
+    </div>
+</body>
+</html>

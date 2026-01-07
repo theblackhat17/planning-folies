@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
+        .alert-box { background: #fef3c7; padding: 20px; border-left: 4px solid #f59e0b; margin: 20px 0; }
+        .info-box { background: white; padding: 20px; border-left: 4px solid #6366f1; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+        .button { display: inline-block; background: #f59e0b; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⏰ Rappel LES FOLIES</h1>
+            <h2>Votre set approche !</h2>
+        </div>
+        <div class="content">
+            <p>Bonjour <strong>{{ dj.dj_name }}</strong>,</p>
+            
+            <div class="alert-box">
+                <h3>⚠️ Dans {{ days_left }} jour{% if days_left > 1 %}s{% endif %}</h3>
+                <p>Votre set à LES FOLIES c'est bientôt !</p>
+            </div>
+            
+            <div class="info-box">
+                <h3>📅 Détails du set</h3>
+                <p><strong>Date :</strong> {{ assignment.date.strftime('%A %d %B %Y') }}</p>
+                <p><strong>Créneau :</strong> 
+                    {% if assignment.time_slot == 'complete' %}
+                        🌙 Soirée complète (00h-6h)
+                    {% elif assignment.time_slot == 'warmup' %}
+                        🌅 Warm-up (00h-2h)
+                    {% elif assignment.time_slot == 'peaktime' %}
+                        🔥 Peak time (2h-6h)
+                    {% endif %}
+                </p>
+                <p><strong>Cachet :</strong> {{ assignment.tarif }}€</p>
+            </div>
+            
+            <p>N'oubliez pas de préparer votre set ! 🎧</p>
+            
+            <a href="https://planning.tbhone.uk" class="button">Voir mon planning</a>
+            
+            <p style="margin-top: 30px;">On a hâte de vous voir ! 🎶</p>
+        </div>
+        <div class="footer">
+            <p>© 2026 LES FOLIES - Planning automatique</p>
+        </div>
+    </div>
+</body>
+</html>
