@@ -32,6 +32,13 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    <!-- Planning Mensuel pour tout le monde -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('planning_mensuel') }}">
+                            <i class="fas fa-calendar-days me-1"></i>Planning Mensuel
+                        </a>
+                    </li>
+                    
                     {% if current_user.is_admin %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin_dashboard') }}">

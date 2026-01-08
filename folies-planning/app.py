@@ -1085,6 +1085,55 @@ def admin_export_planning_pdf():
     except Exception as e:
         flash(f'Erreur lors de la génération du PDF: {str(e)}', 'danger')
         return redirect(url_for('admin_dashboard'))
+@app.route('/planning-mensuel')
+@login_required
+def planning_mensuel():
+    """Planning mensuel en lecture seule pour les DJs"""
+    from datetime import datetime
+    from calendar import monthrange
+    
+    # Récupérer le mois demandé (ou mois actuel)
+    year = request.args.get('year', datetime.now().year, type=int)
+    month = request.args.get('month', datetime.now().month, type=int)
+    
+    # Calculer les dates du mois
+    first_day = datetime(year, month, 1)
+    last_day_num = monthrange(year, month)[1]
+    last_day = datetime(year, month, last_day_num)
+    
+    # Récupérer UNIQUEMENT les assignments (pas les disponibilités)
+    assignments = Assignment.query.filter(
+        Assignment.date >= first_day,
+        Assignment.date <= last_day
+    ).order_by(Assignment.date, Assignment.time_slot).all()
+    
+    # Organiser par date
+    planning_by_date = {}
+    current_date = first_day
+    while current_date <= last_day:
+        date_str = current_date.strftime('%Y-%m-%d')
+        day_assignments = [a for a in assignments if a.date == current_date.date()]
+        planning_by_date[date_str] = {
+            'date': current_date,
+            'assignments': day_assignments,
+            'day_name': current_date.strftime('%A'),
+            'is_weekend': current_date.weekday() in [3, 4, 5]  # Jeu/Ven/Sam
+        }
+        current_date = current_date + timedelta(days=1)
+    
+    # Mois suivant/précédent
+    prev_month = month - 1 if month > 1 else 12
+    prev_year = year if month > 1 else year - 1
+    next_month = month + 1 if month < 12 else 1
+    next_year = year if month < 12 else year + 1
+    
+    return render_template('planning_mensuel.html',
+                         planning_by_date=planning_by_date,
+                         current_month=datetime(year, month, 1),
+                         prev_month=prev_month,
+                         prev_year=prev_year,
+                         next_month=next_month,
+                         next_year=next_year)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

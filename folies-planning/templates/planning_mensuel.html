@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Planning Mensuel - LES FOLIES{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    
+    <!-- Header avec navigation -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <a href="{{ url_for('planning_mensuel', year=prev_year, month=prev_month) }}" 
+                       class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Mois précédent
+                    </a>
+                </div>
+                <div class="col-md-6 text-center">
+                    <h1 class="mb-0 text-primary fw-bold">
+                        <i class="fas fa-calendar-days me-2"></i>
+                        Planning {{ current_month.strftime('%B %Y') }}
+                    </h1>
+                </div>
+                <div class="col-md-3 text-end">
+                    <a href="{{ url_for('planning_mensuel', year=next_year, month=next_month) }}" 
+                       class="btn btn-secondary">
+                        Mois suivant<i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Légende -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <span class="badge bg-success p-2">
+                        <i class="fas fa-clock me-1"></i>Soirée complète (00h-6h)
+                    </span>
+                </div>
+                <div class="col-md-4">
+                    <span class="badge bg-info p-2">
+                        <i class="fas fa-fire me-1"></i>Warm-up (00h-2h)
+                    </span>
+                </div>
+                <div class="col-md-4">
+                    <span class="badge bg-primary p-2">
+                        <i class="fas fa-star me-1"></i>Peak time (2h-6h)
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grille du calendrier -->
+    <div class="row g-3">
+        {% for date_str, day_data in planning_by_date.items() %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm {% if day_data.is_weekend %}border-primary border-3{% endif %}">
+                
+                <!-- Header du jour -->
+                <div class="card-header text-white {% if day_data.is_weekend %}bg-primary{% else %}bg-secondary{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0 fw-bold">{{ day_data.date.strftime('%d') }}</h3>
+                            <small>{{ day_data.day_name }}</small>
+                        </div>
+                        {% if day_data.is_weekend %}
+                        <span class="badge bg-light text-primary">
+                            <i class="fas fa-music me-1"></i>Ouvert
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Corps : Assignments -->
+                <div class="card-body">
+                    {% if day_data.assignments %}
+                        {% for assignment in day_data.assignments %}
+                        <div class="mb-3 p-3 rounded 
+                                    {% if assignment.time_slot == 'complete' %}bg-success bg-opacity-10 border border-success
+                                    {% elif assignment.time_slot == 'warmup' %}bg-info bg-opacity-10 border border-info
+                                    {% else %}bg-primary bg-opacity-10 border border-primary{% endif %}">
+                            
+                            <!-- DJ Name -->
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-headphones fa-lg me-2 text-primary"></i>
+                                <strong class="fs-5">{{ assignment.user.dj_name }}</strong>
+                            </div>
+
+                            <!-- Créneau -->
+                            <div class="text-muted small mb-2">
+                                <i class="far fa-clock me-1"></i>
+                                {% if assignment.time_slot == 'complete' %}
+                                    Soirée complète (00h-6h)
+                                {% elif assignment.time_slot == 'warmup' %}
+                                    Warm-up (00h-2h)
+                                {% else %}
+                                    Peak time (2h-6h)
+                                {% endif %}
+                            </div>
+
+                            <!-- Cachet -->
+                            <div class="fw-bold text-success mb-2">
+                                <i class="fas fa-euro-sign me-1"></i>
+                                {{ assignment.tarif }}€
+                            </div>
+
+                            <!-- Notes -->
+                            {% if assignment.notes %}
+                            <div class="small text-muted fst-italic border-top pt-2">
+                                <i class="fas fa-note-sticky me-1"></i>
+                                {{ assignment.notes }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="far fa-calendar-xmark fa-3x mb-3 opacity-25"></i>
+                            <p class="mb-0">Aucun DJ assigné</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Bouton retour -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg">
+            <i class="fas fa-arrow-left me-2"></i>Retour au planning
+        </a>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Animation hover sur les cards */
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+
+    /* Badge personnalisé */
+    .badge {
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+    }
+
+    /* Responsive mobile */
+    @media (max-width: 768px) {
+        .card-header h3 {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
