@@ -3,93 +3,92 @@
 {% block title %}Dashboard Admin - LES FOLIES{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-5">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-           <h1 class="display-5 fw-bold">
-                <i class="fas fa-chart-line me-3"></i>Dashboard Administrateur
-            </h1>
-            <p class="text-secondary">Gestion globale des plannings et des DJs</p>
-        </div>
+<div class="container-fluid px-3 px-lg-4 py-4">
+    <!-- Page Header -->
+    <div class="page-header fade-in-up">
+        <h1>
+            <span class="text-gradient">Dashboard Admin</span>
+        </h1>
+        <p class="subtitle">Vue globale des plannings et de l'equipe</p>
     </div>
 
     <!-- Stats Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="card dashboard-card fade-in bg-primary text-white">
-                <div class="card-body text-center">
-                    <i class="fas fa-users fa-3x mb-3"></i>
-                    <h3 class="fw-bold">{{ stats.total_djs }}</h3>
-                    <p class="mb-0">DJs Actifs</p>
-                </div>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card accent fade-in-up stagger-1">
+                <div class="stat-icon" style="color: var(--accent);"><i class="fas fa-users"></i></div>
+                <div class="stat-value" style="color: var(--accent);">{{ stats.total_djs }}</div>
+                <div class="stat-label">DJs Actifs</div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card dashboard-card fade-in bg-success text-white" style="animation-delay: 0.1s;">
-                <div class="card-body text-center">
-                    <i class="fas fa-calendar-check fa-3x mb-3"></i>
-                    <h3 class="fw-bold">{{ stats.assignments_month }}</h3>
-                    <p class="mb-0">Sets ce mois</p>
-                </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card success fade-in-up stagger-2">
+                <div class="stat-icon" style="color: var(--success);"><i class="fas fa-calendar-check"></i></div>
+                <div class="stat-value" style="color: var(--success);">{{ stats.assignments_month }}</div>
+                <div class="stat-label">Sets ce mois</div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card dashboard-card fade-in bg-warning text-white" style="animation-delay: 0.2s;">
-                <div class="card-body text-center">
-                    <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                    <h3 class="fw-bold">{{ stats.conflicts }}</h3>
-                    <p class="mb-0">Conflits à résoudre</p>
-                </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card warning fade-in-up stagger-3">
+                <div class="stat-icon" style="color: var(--warning);"><i class="fas fa-triangle-exclamation"></i></div>
+                <div class="stat-value" style="color: var(--warning);">{{ stats.conflicts }}</div>
+                <div class="stat-label">Conflits</div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card dashboard-card fade-in bg-danger text-white" style="animation-delay: 0.3s;">
-                <div class="card-body text-center">
-                    <i class="fas fa-times-circle fa-3x mb-3"></i>
-                    <h3 class="fw-bold">{{ stats.unassigned_days }}</h3>
-                    <p class="mb-0">Jours non assignés</p>
-                </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card danger fade-in-up stagger-4">
+                <div class="stat-icon" style="color: var(--danger);"><i class="fas fa-circle-xmark"></i></div>
+                <div class="stat-value" style="color: var(--danger);">{{ stats.unassigned_days }}</div>
+                <div class="stat-label">Non assignes</div>
             </div>
         </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4 fade-in-up stagger-5" id="adminTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="planning-tab" data-bs-toggle="tab" data-bs-target="#planning" type="button">
-                <i class="fas fa-calendar-alt me-2"></i>Planning Global
+                <i class="fas fa-calendar-alt me-1"></i>Planning
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="conflicts-tab" data-bs-toggle="tab" data-bs-target="#conflicts" type="button">
-                <i class="fas fa-exclamation-triangle me-2"></i>Conflits ({{ stats.conflicts }})
+                <i class="fas fa-triangle-exclamation me-1"></i>Conflits
+                {% if stats.conflicts > 0 %}
+                <span class="badge badge-solid-warning ms-1" style="font-size: 0.65rem;">{{ stats.conflicts }}</span>
+                {% endif %}
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="djs-tab" data-bs-toggle="tab" data-bs-target="#djs" type="button">
-                <i class="fas fa-users me-2"></i>Gestion DJs
+                <i class="fas fa-users me-1"></i>DJs
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button">
-                <i class="fas fa-user-clock me-2"></i>Demandes ({{ pending_count }})
+                <i class="fas fa-user-clock me-1"></i>Demandes
+                {% if pending_count > 0 %}
+                <span class="badge badge-solid-accent ms-1" style="font-size: 0.65rem;">{{ pending_count }}</span>
+                {% endif %}
             </button>
         </li>
     </ul>
 
     <!-- Tab Content -->
     <div class="tab-content" id="adminTabsContent">
-        
-        <!-- Planning Global Tab -->
+
+        <!-- ========== PLANNING TAB ========== -->
         <div class="tab-pane fade show active" id="planning" role="tabpanel">
-            <div class="card shadow-lg">
-                <div class="card-header bg-dark text-white">
+            <div class="card">
+                <div class="card-header header-accent">
                     <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Planning du Mois</h5>
+                        <div class="col-md-5">
+                            <h5 class="section-title mb-0">
+                                <span class="icon"><i class="fas fa-calendar-alt"></i></span>
+                                Planning du Mois
+                            </h5>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-7">
                             <div class="d-flex justify-content-end align-items-center gap-2">
                                 <form method="GET" class="d-flex align-items-center gap-2">
                                     <select name="month" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
@@ -105,9 +104,9 @@
                                         {% endfor %}
                                     </select>
                                 </form>
-                                <a href="{{ url_for('admin_export_planning_pdf', month=current_month, year=current_year) }}" 
-                                   class="btn btn-danger btn-sm" 
-                                   title="Télécharger PDF"
+                                <a href="{{ url_for('admin_export_planning_pdf', month=current_month, year=current_year) }}"
+                                   class="btn btn-danger-custom btn-sm"
+                                   title="Telecharger PDF"
                                    target="_blank">
                                     <i class="fas fa-file-pdf me-1"></i>PDF
                                 </a>
@@ -116,20 +115,20 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <!-- Légende -->
-                    <div class="mb-3 d-flex gap-3 flex-wrap">
-                        <span class="badge" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);"><i class="fas fa-music me-1"></i>Assigné</span>
-                        <span class="badge bg-success"><i class="fas fa-moon me-1"></i>Complète</span>
-                        <span class="badge bg-info"><i class="fas fa-sunrise me-1"></i>Warm-up</span>
-                        <span class="badge bg-warning text-dark"><i class="fas fa-fire me-1"></i>Peak time</span>
-                        <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Aucun</span>
-                        <span class="badge bg-secondary"><i class="fas fa-calendar me-1"></i>Passé</span>
+                    <!-- Legend -->
+                    <div class="mb-3 d-flex gap-2 flex-wrap">
+                        <span class="badge badge-assigned"><i class="fas fa-bolt me-1"></i>Assigne</span>
+                        <span class="badge badge-solid-success"><i class="fas fa-moon me-1"></i>Complete</span>
+                        <span class="badge badge-solid-info"><i class="fas fa-sun me-1"></i>Warm-up</span>
+                        <span class="badge badge-solid-warning"><i class="fas fa-fire me-1"></i>Peak</span>
+                        <span class="badge badge-solid-danger"><i class="fas fa-times me-1"></i>Aucun</span>
+                        <span class="badge bg-secondary"><i class="fas fa-clock me-1"></i>Passe</span>
                     </div>
 
-                    <!-- Calendrier -->
+                    <!-- Calendar Grid -->
                     <div class="table-responsive">
-                        <table class="table table-bordered text-center">
-                            <thead class="table-light">
+                        <table class="table table-bordered text-center mb-0">
+                            <thead>
                                 <tr>
                                     <th>Lun</th>
                                     <th>Mar</th>
@@ -146,41 +145,41 @@
                                     {% for day in week %}
                                     <td class="p-0">
                                         {% if day %}
-                                        <div class="calendar-day-admin {{ day.status }}" 
+                                        <div class="calendar-day-admin {{ day.status }}"
                                              data-date="{{ day.date }}"
                                              onclick="showDayDetails('{{ day.date }}')">
-                                            <div class="fw-bold mb-2">{{ day.day }}</div>
-                                            
+                                            <div class="fw-bold mb-2 day-number">{{ day.day }}</div>
+
                                             {% if day.assignments %}
                                                 {% for assignment in day.assignments %}
-                                                <div class="badge w-100 mb-1" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); font-size: 0.7rem;">
-                                                    <i class="fas fa-music"></i> {{ assignment.user.dj_name }}
-                                                    {% if assignment.time_slot == 'warmup' %}🌅
-                                                    {% elif assignment.time_slot == 'peaktime' %}🔥
-                                                    {% elif assignment.time_slot == 'complete' %}🌙
+                                                <div class="badge badge-assigned w-100 mb-1" style="font-size: 0.65rem;">
+                                                    <i class="fas fa-bolt"></i> {{ assignment.user.dj_name }}
+                                                    {% if assignment.time_slot == 'warmup' %}<i class="fas fa-sun ms-1"></i>
+                                                    {% elif assignment.time_slot == 'peaktime' %}<i class="fas fa-fire ms-1"></i>
+                                                    {% elif assignment.time_slot == 'complete' %}<i class="fas fa-moon ms-1"></i>
                                                     {% endif %}
                                                 </div>
                                                 {% endfor %}
                                             {% elif day.is_past %}
-                                            <div class="badge bg-secondary w-100">Passé</div>
+                                            <div class="badge bg-secondary w-100" style="font-size: 0.65rem;">Passe</div>
                                             {% else %}
                                                 {% if day.complete_count > 0 %}
-                                                <div class="badge bg-success w-100 mb-1" style="font-size: 0.7rem;">
-                                                    <i class="fas fa-moon"></i> {{ day.complete_count }} complète(s)
+                                                <div class="badge badge-solid-success w-100 mb-1" style="font-size: 0.65rem;">
+                                                    <i class="fas fa-moon"></i> {{ day.complete_count }}
                                                 </div>
                                                 {% endif %}
                                                 {% if day.warmup_count > 0 %}
-                                                <div class="badge bg-info w-100 mb-1" style="font-size: 0.7rem;">
-                                                    <i class="fas fa-sunrise"></i> {{ day.warmup_count }} warm-up(s)
+                                                <div class="badge badge-solid-info w-100 mb-1" style="font-size: 0.65rem;">
+                                                    <i class="fas fa-sun"></i> {{ day.warmup_count }}
                                                 </div>
                                                 {% endif %}
                                                 {% if day.peaktime_count > 0 %}
-                                                <div class="badge bg-warning text-dark w-100 mb-1" style="font-size: 0.7rem;">
-                                                    <i class="fas fa-fire"></i> {{ day.peaktime_count }} peak(s)
+                                                <div class="badge badge-solid-warning w-100 mb-1" style="font-size: 0.65rem;">
+                                                    <i class="fas fa-fire"></i> {{ day.peaktime_count }}
                                                 </div>
                                                 {% endif %}
                                                 {% if day.warmup_count == 0 and day.peaktime_count == 0 and day.complete_count == 0 %}
-                                                <div class="badge bg-danger w-100">
+                                                <div class="badge badge-solid-danger w-100" style="font-size: 0.65rem;">
                                                     <i class="fas fa-times"></i> Aucun
                                                 </div>
                                                 {% endif %}
@@ -198,62 +197,66 @@
             </div>
         </div>
 
-        <!-- Conflits Tab -->
+        <!-- ========== CONFLICTS TAB ========== -->
         <div class="tab-pane fade" id="conflicts" role="tabpanel">
-            <div class="card shadow-lg">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Dates avec Plusieurs DJs Disponibles</h5>
+            <div class="card">
+                <div class="card-header" style="border-bottom-color: rgba(255, 171, 0, 0.2);">
+                    <h5 class="section-title mb-0">
+                        <span class="icon" style="color: var(--warning);"><i class="fas fa-triangle-exclamation"></i></span>
+                        Dates avec Plusieurs DJs Disponibles
+                    </h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     {% if conflicts_data %}
-                    <div class="list-group">
                         {% for conflict in conflicts_data %}
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0 fw-bold">
-                                    <i class="fas fa-calendar-day text-warning me-2"></i>
+                        <div class="set-item">
+                            <div>
+                                <div class="set-date">
+                                    <i class="fas fa-calendar-day me-2" style="color: var(--warning);"></i>
                                     {{ conflict.date.strftime('%A %d %B %Y') }}
-                                </h6>
-                                <span class="badge bg-warning text-dark">{{ conflict.djs|length }} DJs disponibles</span>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    {% for dj in conflict.djs %}
+                                    <button class="btn btn-ghost btn-sm" onclick="assignDJ('{{ conflict.date }}', {{ dj.id }})">
+                                        <i class="fas fa-user-check me-1"></i>{{ dj.dj_name }}
+                                    </button>
+                                    {% endfor %}
+                                </div>
                             </div>
-                            <div class="d-flex flex-wrap gap-2">
-                                {% for dj in conflict.djs %}
-                                <button class="btn btn-sm btn-outline-primary" onclick="assignDJ('{{ conflict.date }}', {{ dj.id }})">
-                                    <i class="fas fa-user-check me-1"></i>Assigner {{ dj.dj_name }}
-                                </button>
-                                {% endfor %}
-                            </div>
+                            <span class="badge badge-solid-warning">{{ conflict.djs|length }} DJs</span>
                         </div>
                         {% endfor %}
-                    </div>
                     {% else %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-                        <p class="text-muted">Aucun conflit ! Tous les jours ont 0 ou 1 DJ disponible.</p>
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle" style="color: var(--success);"></i>
+                        <p>Aucun conflit. C'est clean.</p>
                     </div>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Gestion DJs Tab -->
+        <!-- ========== DJS TAB ========== -->
         <div class="tab-pane fade" id="djs" role="tabpanel">
-            <div class="card shadow-lg">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>Liste des DJs</h5>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addDJModal">
-                        <i class="fas fa-plus me-2"></i>Ajouter un DJ
+            <div class="card">
+                <div class="card-header header-accent d-flex justify-content-between align-items-center">
+                    <h5 class="section-title mb-0">
+                        <span class="icon"><i class="fas fa-users"></i></span>
+                        Equipe DJs
+                    </h5>
+                    <button class="btn btn-accent btn-sm" data-bs-toggle="modal" data-bs-target="#addDJModal">
+                        <i class="fas fa-plus me-1"></i>Ajouter
                     </button>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover mb-0">
                             <thead>
                                 <tr>
-                                    <th>Nom de scène</th>
+                                    <th>DJ</th>
                                     <th class="mobile-hide">Username</th>
                                     <th class="mobile-hide">Email</th>
-                                    <th class="mobile-hide">Téléphone</th>
+                                    <th class="mobile-hide">Tel</th>
                                     <th>Dispos</th>
                                     <th>Sets</th>
                                     <th>Statut</th>
@@ -264,30 +267,30 @@
                                 {% for dj in all_djs %}
                                 <tr>
                                     <td class="fw-bold">
-                                        <i class="fas fa-headphones text-primary me-2"></i>{{ dj.dj_name }}
-                                        <div class="d-md-none small text-muted">{{ dj.username }}</div>
+                                        <i class="fas fa-headphones me-2" style="color: var(--accent);"></i>{{ dj.dj_name }}
+                                        <div class="d-md-none small" style="color: var(--text-muted);">{{ dj.username }}</div>
                                     </td>
-                                    <td class="mobile-hide">{{ dj.username }}</td>
-                                    <td class="mobile-hide">{{ dj.email }}</td>
-                                    <td class="mobile-hide">{{ dj.phone or '-' }}</td>
-                                    <td><span class="badge bg-info">{{ dj.disponibilites_count }}</span></td>
+                                    <td class="mobile-hide" style="color: var(--text-secondary);">{{ dj.username }}</td>
+                                    <td class="mobile-hide" style="color: var(--text-secondary);">{{ dj.email }}</td>
+                                    <td class="mobile-hide" style="color: var(--text-secondary);">{{ dj.phone or '-' }}</td>
+                                    <td><span class="badge bg-info">{{ dj.disponibilites }}</span></td>
                                     <td><span class="badge bg-success">{{ dj.assignments_count }}</span></td>
                                     <td>
                                         {% if dj.is_active %}
-                                        <span class="badge bg-success">Actif</span>
+                                        <span class="badge badge-solid-success">Actif</span>
                                         {% else %}
-                                        <span class="badge bg-danger">Inactif</span>
+                                        <span class="badge badge-solid-danger">Inactif</span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-primary" onclick="viewDJCalendar({{ dj.id }})" title="Calendrier">
+                                        <div class="d-flex gap-1">
+                                            <button class="btn btn-ghost btn-sm" onclick="viewDJCalendar({{ dj.id }})" title="Calendrier">
                                                 <i class="fas fa-calendar"></i>
                                             </button>
-                                            <button class="btn btn-outline-warning" onclick="toggleDJStatus({{ dj.id }}, {{ dj.is_active|tojson }})" title="Activer/Désactiver">
+                                            <button class="btn btn-warning-custom btn-sm" onclick="toggleDJStatus({{ dj.id }}, {{ dj.is_active|tojson }})" title="Toggle">
                                                 <i class="fas fa-power-off"></i>
                                             </button>
-                                            <button class="btn btn-outline-danger" onclick="deleteDJ({{ dj.id }})" title="Supprimer">
+                                            <button class="btn btn-danger-custom btn-sm" onclick="deleteDJ({{ dj.id }})" title="Supprimer">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
@@ -301,47 +304,51 @@
             </div>
         </div>
 
-        <!-- Demandes d'inscription Tab -->
+        <!-- ========== PENDING TAB ========== -->
         <div class="tab-pane fade" id="pending" role="tabpanel">
-            <div class="card shadow-lg">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="fas fa-user-clock me-2"></i>Demandes d'inscription en attente</h5>
+            <div class="card">
+                <div class="card-header" style="border-bottom-color: rgba(0, 176, 255, 0.2);">
+                    <h5 class="section-title mb-0">
+                        <span class="icon" style="color: var(--info);"><i class="fas fa-user-clock"></i></span>
+                        Demandes d'inscription
+                    </h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     {% if pending_djs %}
-                    <div class="list-group">
                         {% for dj in pending_djs %}
-                        <div class="list-group-item">
-                            <div class="row align-items-center">
-                                <div class="col-md-8">
-                                    <h6 class="mb-1 fw-bold">
-                                        <i class="fas fa-headphones text-info me-2"></i>{{ dj.dj_name }}
-                                    </h6>
-                                    <p class="mb-0 small text-muted">
-                                        <i class="fas fa-user me-1"></i>{{ dj.username }} | 
-                                        <i class="fas fa-envelope me-1"></i>{{ dj.email }}
-                                        {% if dj.phone %} | <i class="fas fa-phone me-1"></i>{{ dj.phone }}{% endif %}
-                                    </p>
-                                    <p class="mb-0 small text-muted">
-                                        <i class="fas fa-clock me-1"></i>Inscrit le {{ dj.created_at.strftime('%d/%m/%Y à %H:%M') }}
-                                    </p>
+                        <div class="set-item">
+                            <div>
+                                <div class="set-date">
+                                    <i class="fas fa-headphones me-2" style="color: var(--info);"></i>
+                                    {{ dj.dj_name }}
                                 </div>
-                                <div class="col-md-4 text-end">
-                                    <button class="btn btn-success btn-sm" onclick="approveDJ({{ dj.id }})">
-                                        <i class="fas fa-check me-1"></i>Approuver
-                                    </button>
-                                    <button class="btn btn-danger btn-sm" onclick="rejectDJ({{ dj.id }})">
-                                        <i class="fas fa-times me-1"></i>Refuser
-                                    </button>
+                                <div class="set-slot">
+                                    <i class="fas fa-at me-1"></i>{{ dj.username }}
+                                    <span class="mx-1">&bull;</span>
+                                    <i class="fas fa-envelope me-1"></i>{{ dj.email }}
+                                    {% if dj.phone %}
+                                    <span class="mx-1">&bull;</span>
+                                    <i class="fas fa-phone me-1"></i>{{ dj.phone }}
+                                    {% endif %}
                                 </div>
+                                <div class="set-slot">
+                                    <i class="fas fa-clock me-1"></i>Inscrit le {{ dj.created_at.strftime('%d/%m/%Y a %H:%M') }}
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-success-custom btn-sm" onclick="approveDJ({{ dj.id }})">
+                                    <i class="fas fa-check me-1"></i>OK
+                                </button>
+                                <button class="btn btn-danger-custom btn-sm" onclick="rejectDJ({{ dj.id }})">
+                                    <i class="fas fa-times me-1"></i>Non
+                                </button>
                             </div>
                         </div>
                         {% endfor %}
-                    </div>
                     {% else %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-                        <p class="text-muted">Aucune demande en attente</p>
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle" style="color: var(--success);"></i>
+                        <p>Aucune demande en attente</p>
                     </div>
                     {% endif %}
                 </div>
@@ -350,18 +357,18 @@
     </div>
 </div>
 
-<!-- Modal Ajouter DJ -->
+<!-- Modal: Add DJ -->
 <div class="modal fade" id="addDJModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Ajouter un DJ</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2" style="color: var(--accent);"></i>Ajouter un DJ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{{ url_for('admin_add_dj') }}">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Nom de scène *</label>
+                        <label class="form-label">Nom de scene *</label>
                         <input type="text" class="form-control" name="dj_name" required>
                     </div>
                     <div class="mb-3">
@@ -373,7 +380,7 @@
                         <input type="email" class="form-control" name="email" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Téléphone</label>
+                        <label class="form-label">Telephone</label>
                         <input type="tel" class="form-control" name="phone" placeholder="+33 6 00 00 00 00">
                     </div>
                     <div class="mb-3">
@@ -382,9 +389,9 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>Créer le compte
+                    <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-accent">
+                        <i class="fas fa-save me-1"></i>Creer
                     </button>
                 </div>
             </form>
@@ -392,16 +399,16 @@
     </div>
 </div>
 
-<!-- Modal Détails Jour -->
+<!-- Modal: Day Details -->
 <div class="modal fade" id="dayDetailsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
+            <div class="modal-header">
                 <h5 class="modal-title" id="dayDetailsTitle"></h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="dayDetailsBody">
-                <!-- Chargé dynamiquement -->
+                <!-- Loaded dynamically -->
             </div>
         </div>
     </div>
@@ -411,19 +418,7 @@
 {% block extra_css %}
 <style>
 .calendar-day-admin {
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 5px;
     min-height: 110px;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: var(--bg-primary);
-}
-
-.calendar-day-admin:hover:not(.past) {
-    border-color: var(--primary);
-    box-shadow: 0 2px 8px var(--shadow);
-    transform: translateY(-2px);
 }
 </style>
 {% endblock %}
@@ -441,8 +436,8 @@ function showDayDetails(date) {
 }
 
 function assignDJ(date, djId) {
-    if (!confirm('Confirmer l\'assignation de ce DJ ?')) return;
-    
+    if (!confirm('Confirmer l\'assignation ?')) return;
+
     fetch('/admin/assign-dj', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -450,18 +445,15 @@ function assignDJ(date, djId) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Erreur: ' + data.error);
-        }
+        if (data.success) location.reload();
+        else alert('Erreur: ' + data.error);
     });
 }
 
 function toggleDJStatus(djId, currentStatus) {
-    const action = currentStatus ? 'désactiver' : 'activer';
-    if (!confirm(`Voulez-vous vraiment ${action} ce DJ ?`)) return;
-    
+    const action = currentStatus ? 'desactiver' : 'activer';
+    if (!confirm(`Voulez-vous ${action} ce DJ ?`)) return;
+
     fetch('/admin/toggle-dj-status', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -469,17 +461,14 @@ function toggleDJStatus(djId, currentStatus) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Erreur: ' + data.error);
-        }
+        if (data.success) location.reload();
+        else alert('Erreur: ' + data.error);
     });
 }
 
 function deleteDJ(djId) {
-    if (!confirm('ATTENTION: Supprimer ce DJ supprimera toutes ses données (disponibilités et assignments). Continuer ?')) return;
-    
+    if (!confirm('ATTENTION: Supprimer ce DJ supprimera toutes ses donnees. Continuer ?')) return;
+
     fetch('/admin/delete-dj', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -487,11 +476,8 @@ function deleteDJ(djId) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Erreur: ' + data.error);
-        }
+        if (data.success) location.reload();
+        else alert('Erreur: ' + data.error);
     });
 }
 
@@ -500,8 +486,8 @@ function viewDJCalendar(djId) {
 }
 
 function unassignDJ(date, timeSlot) {
-    if (!confirm('Confirmer le retrait de cette assignation ?')) return;
-    
+    if (!confirm('Retirer cette assignation ?')) return;
+
     fetch('/admin/unassign-dj', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -509,17 +495,14 @@ function unassignDJ(date, timeSlot) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Erreur: ' + data.error);
-        }
+        if (data.success) location.reload();
+        else alert('Erreur: ' + data.error);
     });
 }
 
 function approveDJ(djId) {
     if (!confirm('Approuver ce DJ ?')) return;
-    
+
     fetch('/admin/approve-dj', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -527,17 +510,14 @@ function approveDJ(djId) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Erreur: ' + data.error);
-        }
+        if (data.success) location.reload();
+        else alert('Erreur: ' + data.error);
     });
 }
 
 function rejectDJ(djId) {
-    if (!confirm('ATTENTION: Refuser cette demande supprimera définitivement le compte. Continuer ?')) return;
-    
+    if (!confirm('Refuser et supprimer cette demande ?')) return;
+
     fetch('/admin/reject-dj', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -545,11 +525,8 @@ function rejectDJ(djId) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Erreur: ' + data.error);
-        }
+        if (data.success) location.reload();
+        else alert('Erreur: ' + data.error);
     });
 }
 </script>

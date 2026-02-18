@@ -3,58 +3,59 @@
 {% block title %}Dashboard DJ - {{ current_user.dj_name }}{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <h1 class="display-5 fw-bold">
-                <i class="fas fa-headphones me-3"></i>Bienvenue, {{ current_user.dj_name }}
-            </h1>
-            <p class="text-secondary">Gérez vos disponibilités et consultez votre planning</p>
+<div class="container py-4">
+    <!-- Page Header -->
+    <div class="page-header fade-in-up">
+        <h1>
+            <span class="text-gradient">{{ current_user.dj_name }}</span>
+        </h1>
+        <p class="subtitle">Gere tes dispos et consulte ton planning</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card success fade-in-up stagger-1">
+                <div class="stat-icon" style="color: var(--success);">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-value" style="color: var(--success);">{{ stats.disponibilites }}</div>
+                <div class="stat-label">Dispos ce mois</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card accent fade-in-up stagger-2">
+                <div class="stat-icon" style="color: var(--accent);">
+                    <i class="fas fa-music"></i>
+                </div>
+                <div class="stat-value" style="color: var(--accent);">{{ stats.assignments }}</div>
+                <div class="stat-label">Sets assignes</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card magenta fade-in-up stagger-3">
+                <div class="stat-icon" style="color: var(--magenta);">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="stat-value" style="color: var(--magenta);">{{ stats.prochains_sets }}</div>
+                <div class="stat-label">Prochains sets</div>
+            </div>
         </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="row mb-4">
-        <div class="col-md-4 mb-3">
-            <div class="card dashboard-card fade-in">
-                <div class="card-body text-center">
-                    <i class="fas fa-calendar-check fa-3x text-success mb-3"></i>
-                    <h3 class="fw-bold">{{ stats.disponibilites }}</h3>
-                    <p class="text-muted mb-0">Disponibilités ce mois</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="card dashboard-card fade-in" style="animation-delay: 0.1s;">
-                <div class="card-body text-center">
-                    <i class="fas fa-music fa-3x text-primary mb-3"></i>
-                    <h3 class="fw-bold">{{ stats.assignments }}</h3>
-                    <p class="text-muted mb-0">Sets assignés</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="card dashboard-card fade-in" style="animation-delay: 0.2s;">
-                <div class="card-body text-center">
-                    <i class="fas fa-star fa-3x text-warning mb-3"></i>
-                    <h3 class="fw-bold">{{ stats.prochains_sets }}</h3>
-                    <p class="text-muted mb-0">Prochains sets</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Sélection du mois -->
-    <div class="card shadow-lg mb-4">
-        <div class="card-header bg-dark text-white">
+    <!-- Calendar Section -->
+    <div class="card mb-4 fade-in-up stagger-4">
+        <div class="card-header header-accent">
             <div class="row align-items-center">
                 <div class="col-md-6">
-                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Mes Disponibilités</h5>
+                    <h5 class="section-title mb-0">
+                        <span class="icon"><i class="fas fa-calendar-alt"></i></span>
+                        Mes Disponibilites
+                    </h5>
                 </div>
                 <div class="col-md-6">
-                    <form method="GET" class="d-flex justify-content-end">
-                        <select name="month" class="form-select form-select-sm me-2" onchange="this.form.submit()" style="width: auto;">
+                    <form method="GET" class="d-flex justify-content-end gap-2">
+                        <select name="month" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
                             {% for m in range(1, 13) %}
                             <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>
                                 {{ months[m-1] }}
@@ -71,106 +72,109 @@
             </div>
         </div>
         <div class="card-body">
-            <!-- Légende -->
-            <div class="mb-3 d-flex gap-3 flex-wrap">
-                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Disponible</span>
-                <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Non disponible</span>
-                <span class="badge" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);"><i class="fas fa-star me-1"></i>Assigné</span>
-                <span class="badge bg-secondary"><i class="fas fa-calendar me-1"></i>Passé</span>
+            <!-- Legend -->
+            <div class="mb-3 d-flex gap-2 flex-wrap">
+                <span class="badge-solid-success badge"><i class="fas fa-check me-1"></i>Disponible</span>
+                <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Non dispo</span>
+                <span class="badge-assigned badge"><i class="fas fa-bolt me-1"></i>Assigne</span>
+                <span class="badge bg-secondary"><i class="fas fa-clock me-1"></i>Passe</span>
             </div>
-			<!-- Calendrier -->
-			<div class="table-responsive">
-			    <table class="table table-bordered text-center">
-			        <thead class="table-light">
-			            <tr>
-			                <th>Lun</th>
-			                <th>Mar</th>
-			                <th>Mer</th>
-			                <th>Jeu</th>
-			                <th>Ven</th>
-			                <th>Sam</th>
-			                <th>Dim</th>
-			            </tr>
-			        </thead>
-			        <tbody id="calendar-body">
-			            {% for week in calendar_data %}
-			            <tr>
-			                {% for day in week %}
-			                <td class="p-0">
-			                    {% if day %}
-			                    <div class="calendar-day {{ day.status }}" 
-			                         data-date="{{ day.date }}"
-			                         data-available="{{ day.is_available }}"
-			                         onclick="toggleAvailability('{{ day.date }}', {{ day.is_available|tojson }})">
-			                        <div class="fw-bold mb-1">{{ day.day }}</div>
-			                        {% if day.is_assigned %}
-			                        <span class="badge" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
-			                            <i class="fas fa-star"></i> Assigné
-			                        </span>
-			                        {% elif day.is_past %}
-			                        <span class="badge bg-secondary">Passé</span>
-			                        {% elif day.is_available %}
-			                        <span class="badge bg-success">
-			                            <i class="fas fa-check"></i>
-			                            {% if day.time_slot == 'complete' %}Complète
-			                            {% elif day.time_slot == 'warmup' %}Warm-up
-			                            {% elif day.time_slot == 'peaktime' %}Peak
-			                            {% endif %}
-			                        </span>
-			                        {% else %}
-			                        <span class="badge bg-danger"><i class="fas fa-times"></i> Non dispo</span>
-			                        {% endif %}
-			                    </div>
-			                    {% endif %}
-			                </td>
-			                {% endfor %}
-			            </tr>
-			            {% endfor %}
-			        </tbody>
-			    </table>
-			</div>
+
+            <!-- Calendar Grid -->
+            <div class="table-responsive">
+                <table class="table table-bordered text-center mb-0">
+                    <thead>
+                        <tr>
+                            <th>Lun</th>
+                            <th>Mar</th>
+                            <th>Mer</th>
+                            <th>Jeu</th>
+                            <th>Ven</th>
+                            <th>Sam</th>
+                            <th>Dim</th>
+                        </tr>
+                    </thead>
+                    <tbody id="calendar-body">
+                        {% for week in calendar_data %}
+                        <tr>
+                            {% for day in week %}
+                            <td class="p-0">
+                                {% if day %}
+                                <div class="calendar-day {{ day.status }}"
+                                     data-date="{{ day.date }}"
+                                     data-available="{{ day.is_available }}"
+                                     onclick="toggleAvailability('{{ day.date }}', {{ day.is_available|tojson }})">
+                                    <div class="fw-bold mb-1 day-number">{{ day.day }}</div>
+                                    {% if day.is_assigned %}
+                                    <span class="badge badge-assigned" style="font-size: 0.65rem;">
+                                        <i class="fas fa-bolt"></i> Assigne
+                                    </span>
+                                    {% elif day.is_past %}
+                                    <span class="badge bg-secondary" style="font-size: 0.65rem;">Passe</span>
+                                    {% elif day.is_available %}
+                                    <span class="badge badge-solid-success" style="font-size: 0.65rem;">
+                                        <i class="fas fa-check"></i>
+                                        {% if day.time_slot == 'complete' %}Complete
+                                        {% elif day.time_slot == 'warmup' %}Warm-up
+                                        {% elif day.time_slot == 'peaktime' %}Peak
+                                        {% endif %}
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-danger" style="font-size: 0.65rem;">
+                                        <i class="fas fa-times"></i>
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-   <!-- Prochains sets -->
-    <div class="card shadow-lg">
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Mes Prochains Sets</h5>
+    <!-- Upcoming Sets -->
+    <div class="card fade-in-up stagger-5">
+        <div class="card-header header-accent">
+            <h5 class="section-title mb-0">
+                <span class="icon"><i class="fas fa-bolt"></i></span>
+                Mes Prochains Sets
+            </h5>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             {% if upcoming_sets %}
-            <div class="list-group">
                 {% for assignment in upcoming_sets %}
-                <div class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-1 fw-bold">
-                                <i class="fas fa-music text-primary me-2"></i>
-                                {{ assignment.date.strftime('%A %d %B %Y') }}
-                            </h6>
-                            <p class="mb-0 text-muted small">
-                                <i class="fas fa-clock me-1"></i>
-                                {% if assignment.time_slot == 'complete' %}Soirée complète (00h-6h)
-                                {% elif assignment.time_slot == 'warmup' %}Warm-up (00h-2h)
-                                {% elif assignment.time_slot == 'peaktime' %}Peak time (2h-6h)
-                                {% endif %}
-                                <span class="badge bg-success ms-2">{{ assignment.tarif }}€</span>
-                            </p>
-                            {% if assignment.notes %}
-                            <p class="mb-0 text-muted small">
-                                <i class="fas fa-info-circle me-1"></i>{{ assignment.notes }}
-                            </p>
-                            {% endif %}
+                <div class="set-item">
+                    <div>
+                        <div class="set-date">
+                            <i class="fas fa-music me-2" style="color: var(--accent);"></i>
+                            {{ assignment.date.strftime('%A %d %B %Y') }}
                         </div>
-                        <span class="badge bg-primary">Dans {{ (assignment.date - today).days }} jours</span>
+                        <div class="set-slot">
+                            <i class="fas fa-clock me-1"></i>
+                            {% if assignment.time_slot == 'complete' %}Soiree complete (00h-6h)
+                            {% elif assignment.time_slot == 'warmup' %}Warm-up (00h-2h)
+                            {% elif assignment.time_slot == 'peaktime' %}Peak time (2h-6h)
+                            {% endif %}
+                            &mdash;
+                            <span style="color: var(--success); font-weight: 600;">{{ assignment.tarif }}&euro;</span>
+                        </div>
+                        {% if assignment.notes %}
+                        <div class="set-slot mt-1">
+                            <i class="fas fa-sticky-note me-1"></i>{{ assignment.notes }}
+                        </div>
+                        {% endif %}
                     </div>
+                    <span class="badge badge-accent">Dans {{ (assignment.date - today).days }}j</span>
                 </div>
                 {% endfor %}
-            </div>
             {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
-                <p class="text-muted">Aucun set assigné pour le moment</p>
+            <div class="empty-state">
+                <i class="fas fa-calendar-xmark"></i>
+                <p>Aucun set assigne pour le moment</p>
             </div>
             {% endif %}
         </div>
@@ -186,29 +190,28 @@ function toggleAvailability(date, currentStatus) {
         return;
     }
 
-    // Créer modal pour choix du créneau
     const modalHTML = `
         <div class="modal fade" id="timeSlotModal" tabindex="-1">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Choisir votre disponibilité</h5>
+                        <h5 class="modal-title"><i class="fas fa-clock me-2" style="color: var(--accent);"></i>Disponibilite</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="mb-3">Pour quelle tranche horaire êtes-vous disponible ?</p>
+                        <p style="color: var(--text-secondary);" class="mb-3">Pour quelle tranche horaire es-tu dispo ?</p>
                         <div class="d-grid gap-2">
-                            <button class="btn btn-outline-primary" onclick="saveAvailability('${date}', true, 'complete')">
-                                <i class="fas fa-clock me-2"></i>Soirée complète (00h-6h)
+                            <button class="btn btn-ghost" onclick="saveAvailability('${date}', true, 'complete')">
+                                <i class="fas fa-moon me-2"></i>Soiree complete (00h-6h)
                             </button>
-                            <button class="btn btn-outline-info" onclick="saveAvailability('${date}', true, 'warmup')">
-                                <i class="fas fa-hourglass-start me-2"></i>Warm-up (00h-2h)
+                            <button class="btn btn-ghost" onclick="saveAvailability('${date}', true, 'warmup')">
+                                <i class="fas fa-sun me-2"></i>Warm-up (00h-2h)
                             </button>
-                            <button class="btn btn-outline-success" onclick="saveAvailability('${date}', true, 'peaktime')">
+                            <button class="btn btn-ghost" onclick="saveAvailability('${date}', true, 'peaktime')">
                                 <i class="fas fa-fire me-2"></i>Peak time (2h-6h)
                             </button>
-                            <hr>
-                            <button class="btn btn-outline-danger" onclick="saveAvailability('${date}', false, 'complete')">
+                            <hr style="border-color: var(--border);">
+                            <button class="btn btn-danger-custom" onclick="saveAvailability('${date}', false, 'complete')">
                                 <i class="fas fa-times me-2"></i>Non disponible
                             </button>
                         </div>
@@ -217,12 +220,10 @@ function toggleAvailability(date, currentStatus) {
             </div>
         </div>
     `;
-    
-    // Supprimer ancien modal si existe
+
     const oldModal = document.getElementById('timeSlotModal');
     if (oldModal) oldModal.remove();
-    
-    // Ajouter nouveau modal
+
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     const modal = new bootstrap.Modal(document.getElementById('timeSlotModal'));
     modal.show();
@@ -231,9 +232,7 @@ function toggleAvailability(date, currentStatus) {
 function saveAvailability(date, isAvailable, timeSlot) {
     fetch('/dj/toggle-availability', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             date: date,
             is_available: isAvailable,
@@ -243,7 +242,6 @@ function saveAvailability(date, isAvailable, timeSlot) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Fermer modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('timeSlotModal'));
             if (modal) modal.hide();
             location.reload();
@@ -253,7 +251,7 @@ function saveAvailability(date, isAvailable, timeSlot) {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Erreur lors de la mise à jour');
+        alert('Erreur lors de la mise a jour');
     });
 }
 </script>

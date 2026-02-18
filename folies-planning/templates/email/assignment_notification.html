@@ -3,56 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-        .info-box { background: white; padding: 20px; border-left: 4px solid #6366f1; margin: 20px 0; }
-        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
-        .button { display: inline-block; background: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #eeeef0; margin: 0; padding: 0; background: #06060c; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #0a0a14, #1a1a2e); padding: 40px 30px; text-align: center; border-bottom: 2px solid #c8ff00; }
+        .header h1 { margin: 0; font-size: 28px; color: #c8ff00; letter-spacing: 0.1em; font-weight: 800; }
+        .header p { color: #8888a0; margin: 8px 0 0; font-size: 14px; }
+        .content { background: #111120; padding: 30px; }
+        .info-box { background: #1a1a2e; padding: 20px; border-left: 3px solid #c8ff00; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .info-box h3 { margin: 0 0 12px; color: #c8ff00; font-size: 16px; }
+        .info-box p { margin: 6px 0; color: #eeeef0; }
+        .info-box strong { color: #8888a0; }
+        .button { display: inline-block; background: #c8ff00; color: #0a0a14; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 14px; margin-top: 20px; }
+        .footer { background: #06060c; text-align: center; padding: 20px 30px; color: #555566; font-size: 11px; border-top: 1px solid rgba(255,255,255,0.06); }
+        p { color: #eeeef0; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎵 LES FOLIES</h1>
-            <h2>Nouvelle assignation !</h2>
+            <h1>LES FOLIES</h1>
+            <p>Nouvelle assignation</p>
         </div>
         <div class="content">
-            <p>Bonjour <strong>{{ dj.dj_name }}</strong>,</p>
-            
-            <p>Vous avez été assigné pour un set à LES FOLIES !</p>
-            
+            <p>Salut <strong style="color: #c8ff00;">{{ dj.dj_name }}</strong>,</p>
+            <p>Tu as ete assigne pour un set !</p>
+
             <div class="info-box">
-                <h3>📅 Détails du set</h3>
+                <h3>Details du set</h3>
                 <p><strong>Date :</strong> {{ assignment.date.strftime('%A %d %B %Y') }}</p>
-                <p><strong>Créneau :</strong> 
+                <p><strong>Creneau :</strong>
                     {% if assignment.time_slot == 'complete' %}
-                        🌙 Soirée complète (00h-6h)
+                        Soiree complete (00h-6h)
                     {% elif assignment.time_slot == 'warmup' %}
-                        🌅 Warm-up (00h-2h)
+                        Warm-up (00h-2h)
                     {% elif assignment.time_slot == 'peaktime' %}
-                        🔥 Peak time (2h-6h)
+                        Peak time (2h-6h)
                     {% endif %}
                 </p>
-                <p><strong>Cachet :</strong> {{ assignment.tarif }}€</p>
+                <p><strong>Cachet :</strong> <span style="color: #00e676; font-weight: 700;">{{ assignment.tarif }}&euro;</span></p>
             </div>
-            
+
             {% if assignment.notes %}
             <div class="info-box">
-                <h3>📝 Notes</h3>
+                <h3>Notes</h3>
                 <p>{{ assignment.notes }}</p>
             </div>
             {% endif %}
-            
-            <p>Rendez-vous sur votre dashboard pour voir tous vos sets à venir :</p>
-            <a href="https://planning.tbhone.uk" class="button">Accéder au planning</a>
-            
-            <p style="margin-top: 30px;">À très bientôt ! 🎶</p>
+
+            <p>Check ton dashboard pour voir tous tes sets :</p>
+            <a href="https://planning.tbhone.uk" class="button">Acceder au planning</a>
+
+            <p style="margin-top: 30px; color: #8888a0;">A bientot derriere les platines !</p>
         </div>
         <div class="footer">
-            <p>© 2026 LES FOLIES - Planning automatique</p>
-            <p>Ce message a été envoyé automatiquement, merci de ne pas y répondre.</p>
+            <p>&copy; 2026 LES FOLIES &mdash; Planning DJ</p>
+            <p>Message automatique, ne pas repondre.</p>
         </div>
     </div>
 </body>

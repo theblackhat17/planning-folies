@@ -1,87 +1,81 @@
 {% extends "base.html" %}
 
-{% block title %}Calendrier - {{ dj.dj_name }}{% endblock %}
+{% block title %}{{ dj.dj_name }} - LES FOLIES{% endblock %}
 
 {% block content %}
-<div class="container py-5">
+<div class="container py-4">
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}" class="text-white">Dashboard Admin</a></li>
-            <li class="breadcrumb-item active text-white-50">{{ dj.dj_name }}</li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item active">{{ dj.dj_name }}</li>
         </ol>
     </nav>
 
     <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h1 class="display-5 fw-bold text-white">
-                <i class="fas fa-user-circle me-3"></i>{{ dj.dj_name }}
+    <div class="page-header fade-in-up d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+            <h1>
+                <span class="text-gradient">{{ dj.dj_name }}</span>
             </h1>
-            <p class="text-white-50">
-                <i class="fas fa-envelope me-2"></i>{{ dj.email }}
+            <p class="subtitle">
+                <i class="fas fa-envelope me-1"></i>{{ dj.email }}
                 {% if dj.phone %}
-                <i class="fas fa-phone ms-3 me-2"></i>{{ dj.phone }}
+                <span class="mx-2">&bull;</span>
+                <i class="fas fa-phone me-1"></i>{{ dj.phone }}
                 {% endif %}
             </p>
         </div>
-        <div class="col-md-4 text-end">
-            <span class="badge {% if dj.is_active %}bg-success{% else %}bg-danger{% endif %} fs-6">
-                {{ 'Actif' if dj.is_active else 'Inactif' }}
-            </span>
-        </div>
+        <span class="badge {% if dj.is_active %}badge-solid-success{% else %}badge-solid-danger{% endif %}" style="font-size: 0.85rem; padding: 0.5em 1em;">
+            {{ 'Actif' if dj.is_active else 'Inactif' }}
+        </span>
     </div>
 
-    <!-- Stats DJ -->
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="card dashboard-card fade-in bg-success text-white">
-                <div class="card-body text-center">
-                    <i class="fas fa-calendar-check fa-2x mb-2"></i>
-                    <h4 class="fw-bold">{{ stats.disponibilites_mois }}</h4>
-                    <p class="mb-0 small">Dispos ce mois</p>
-                </div>
+    <!-- Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card success fade-in-up stagger-1">
+                <div class="stat-icon" style="color: var(--success);"><i class="fas fa-calendar-check"></i></div>
+                <div class="stat-value" style="color: var(--success);">{{ stats.disponibilites_mois }}</div>
+                <div class="stat-label">Dispos ce mois</div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card dashboard-card fade-in bg-primary text-white">
-                <div class="card-body text-center">
-                    <i class="fas fa-music fa-2x mb-2"></i>
-                    <h4 class="fw-bold">{{ stats.sets_venir }}</h4>
-                    <p class="mb-0 small">Sets à venir</p>
-                </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card accent fade-in-up stagger-2">
+                <div class="stat-icon" style="color: var(--accent);"><i class="fas fa-music"></i></div>
+                <div class="stat-value" style="color: var(--accent);">{{ stats.sets_venir }}</div>
+                <div class="stat-label">Sets a venir</div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card dashboard-card fade-in bg-warning text-white">
-                <div class="card-body text-center">
-                    <i class="fas fa-history fa-2x mb-2"></i>
-                    <h4 class="fw-bold">{{ stats.sets_passes }}</h4>
-                    <p class="mb-0 small">Sets passés</p>
-                </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card warning fade-in-up stagger-3">
+                <div class="stat-icon" style="color: var(--warning);"><i class="fas fa-history"></i></div>
+                <div class="stat-value" style="color: var(--warning);">{{ stats.sets_passes }}</div>
+                <div class="stat-label">Sets passes</div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card dashboard-card fade-in bg-info text-white">
-                <div class="card-body text-center">
-                    <i class="fas fa-percentage fa-2x mb-2"></i>
-                    <h4 class="fw-bold">{{ stats.taux_dispo }}%</h4>
-                    <p class="mb-0 small">Taux disponibilité</p>
-                </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card info fade-in-up stagger-4">
+                <div class="stat-icon" style="color: var(--info);"><i class="fas fa-chart-line"></i></div>
+                <div class="stat-value" style="color: var(--info);">{{ stats.taux_dispo }}%</div>
+                <div class="stat-label">Taux dispo</div>
             </div>
         </div>
     </div>
 
-    <!-- Calendrier -->
-    <div class="card shadow-lg mb-4">
-        <div class="card-header bg-dark text-white">
+    <!-- Calendar -->
+    <div class="card mb-4 fade-in-up stagger-5">
+        <div class="card-header header-accent">
             <div class="row align-items-center">
                 <div class="col-md-6">
-                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Calendrier des Disponibilités</h5>
+                    <h5 class="section-title mb-0">
+                        <span class="icon"><i class="fas fa-calendar-alt"></i></span>
+                        Calendrier
+                    </h5>
                 </div>
                 <div class="col-md-6">
-                    <form method="GET" class="d-flex justify-content-end">
-                        <select name="month" class="form-select form-select-sm me-2" onchange="this.form.submit()" style="width: auto;">
+                    <form method="GET" class="d-flex justify-content-end gap-2">
+                        <select name="month" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
                             {% for m in range(1, 13) %}
                             <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>
                                 {{ months[m-1] }}
@@ -98,18 +92,17 @@
             </div>
         </div>
         <div class="card-body">
-            <!-- Légende -->
-            <div class="mb-3 d-flex gap-3 flex-wrap">
-                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Disponible</span>
-                <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Non disponible</span>
-                <span class="badge" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);"><i class="fas fa-star me-1"></i>Assigné</span>
-                <span class="badge bg-secondary"><i class="fas fa-calendar me-1"></i>Passé</span>
+            <!-- Legend -->
+            <div class="mb-3 d-flex gap-2 flex-wrap">
+                <span class="badge badge-solid-success"><i class="fas fa-check me-1"></i>Dispo</span>
+                <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Non dispo</span>
+                <span class="badge badge-assigned"><i class="fas fa-bolt me-1"></i>Assigne</span>
+                <span class="badge bg-secondary"><i class="fas fa-clock me-1"></i>Passe</span>
             </div>
 
-            <!-- Calendrier -->
             <div class="table-responsive">
-                <table class="table table-bordered text-center">
-                    <thead class="table-light">
+                <table class="table table-bordered text-center mb-0">
+                    <thead>
                         <tr>
                             <th>Lun</th>
                             <th>Mar</th>
@@ -127,17 +120,21 @@
                             <td class="p-0">
                                 {% if day %}
                                 <div class="calendar-day {{ day.status }}">
-                                    <div class="fw-bold mb-1">{{ day.day }}</div>
+                                    <div class="fw-bold mb-1 day-number">{{ day.day }}</div>
                                     {% if day.is_assigned %}
-                                    <span class="badge" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
-                                        <i class="fas fa-star"></i> Assigné
+                                    <span class="badge badge-assigned" style="font-size: 0.65rem;">
+                                        <i class="fas fa-bolt"></i> Assigne
                                     </span>
                                     {% elif day.is_past %}
-                                    <span class="badge bg-secondary">Passé</span>
+                                    <span class="badge bg-secondary" style="font-size: 0.65rem;">Passe</span>
                                     {% elif day.is_available %}
-                                    <span class="badge bg-success"><i class="fas fa-check"></i> Dispo</span>
+                                    <span class="badge badge-solid-success" style="font-size: 0.65rem;">
+                                        <i class="fas fa-check"></i> Dispo
+                                    </span>
                                     {% else %}
-                                    <span class="badge bg-danger"><i class="fas fa-times"></i> Non dispo</span>
+                                    <span class="badge bg-danger" style="font-size: 0.65rem;">
+                                        <i class="fas fa-times"></i>
+                                    </span>
                                     {% endif %}
                                 </div>
                                 {% endif %}
@@ -151,61 +148,55 @@
         </div>
     </div>
 
-    <!-- Historique des sets -->
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Prochains Sets</h5>
+    <!-- Sets History -->
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card fade-in-up stagger-6">
+                <div class="card-header header-accent">
+                    <h5 class="section-title mb-0">
+                        <span class="icon"><i class="fas fa-bolt"></i></span>
+                        Prochains Sets
+                    </h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     {% if upcoming_sets %}
-                    <div class="list-group">
                         {% for assignment in upcoming_sets %}
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1 fw-bold">{{ assignment.date.strftime('%A %d %B %Y') }}</h6>
-                                    {% if assignment.notes %}
-                                    <p class="mb-0 text-muted small">{{ assignment.notes }}</p>
-                                    {% endif %}
-                                </div>
-                                <span class="badge bg-primary">Dans {{ (assignment.date - today).days }} jours</span>
-                            </div>
+                        <div class="set-item">
+                            <div class="set-date">{{ assignment.date.strftime('%A %d %B %Y') }}</div>
+                            <span class="badge badge-accent">Dans {{ (assignment.date - today).days }}j</span>
                         </div>
                         {% endfor %}
-                    </div>
                     {% else %}
-                    <p class="text-muted text-center py-4">Aucun set à venir</p>
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-xmark"></i>
+                        <p>Aucun set a venir</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-lg">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Sets Passés (5 derniers)</h5>
+        <div class="col-md-6">
+            <div class="card fade-in-up stagger-6">
+                <div class="card-header" style="border-bottom-color: rgba(255, 171, 0, 0.2);">
+                    <h5 class="section-title mb-0">
+                        <span class="icon" style="color: var(--warning);"><i class="fas fa-history"></i></span>
+                        Sets Passes
+                    </h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     {% if past_sets %}
-                    <div class="list-group">
                         {% for assignment in past_sets %}
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1">{{ assignment.date.strftime('%A %d %B %Y') }}</h6>
-                                    {% if assignment.notes %}
-                                    <p class="mb-0 text-muted small">{{ assignment.notes }}</p>
-                                    {% endif %}
-                                </div>
-                                <span class="badge bg-secondary">Il y a {{ (today - assignment.date).days }} jours</span>
-                            </div>
+                        <div class="set-item">
+                            <div class="set-date">{{ assignment.date.strftime('%A %d %B %Y') }}</div>
+                            <span class="badge bg-secondary">Il y a {{ (today - assignment.date).days }}j</span>
                         </div>
                         {% endfor %}
-                    </div>
                     {% else %}
-                    <p class="text-muted text-center py-4">Aucun historique</p>
+                    <div class="empty-state">
+                        <i class="fas fa-clock"></i>
+                        <p>Aucun historique</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
