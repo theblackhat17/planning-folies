@@ -104,6 +104,9 @@
                                         {% endfor %}
                                     </select>
                                 </form>
+                                <button class="btn btn-accent btn-sm" onclick="autoAssign()" title="Auto-assignation equitable">
+                                    <i class="fas fa-wand-magic-sparkles me-1"></i>Auto-assigner
+                                </button>
                                 <a href="{{ url_for('admin_export_planning_pdf', month=current_month, year=current_year) }}"
                                    class="btn btn-danger-custom btn-sm"
                                    title="Telecharger PDF"
@@ -121,6 +124,7 @@
                         <span class="badge badge-solid-success"><i class="fas fa-moon me-1"></i>Complete</span>
                         <span class="badge badge-solid-info"><i class="fas fa-sun me-1"></i>Warm-up</span>
                         <span class="badge badge-solid-warning"><i class="fas fa-fire me-1"></i>Peak</span>
+                        <span class="badge badge-solid-magenta"><i class="fas fa-user-group me-1"></i>Peak x2</span>
                         <span class="badge badge-solid-danger"><i class="fas fa-times me-1"></i>Aucun</span>
                         <span class="badge bg-secondary"><i class="fas fa-clock me-1"></i>Passe</span>
                     </div>
@@ -152,11 +156,12 @@
 
                                             {% if day.assignments %}
                                                 {% for assignment in day.assignments %}
-                                                <div class="badge badge-assigned w-100 mb-1" style="font-size: 0.65rem;">
-                                                    <i class="fas fa-bolt"></i> {{ assignment.user.dj_name }}
+                                                <div class="badge {% if assignment.time_slot == 'peaktime_duo' %}badge-solid-magenta{% else %}badge-assigned{% endif %} w-100 mb-1" style="font-size: 0.65rem;">
+                                                    {% if assignment.time_slot == 'peaktime_duo' %}<i class="fas fa-user-group"></i>{% else %}<i class="fas fa-bolt"></i>{% endif %} {{ assignment.user.dj_name }}
                                                     {% if assignment.time_slot == 'warmup' %}<i class="fas fa-sun ms-1"></i>
                                                     {% elif assignment.time_slot == 'peaktime' %}<i class="fas fa-fire ms-1"></i>
                                                     {% elif assignment.time_slot == 'complete' %}<i class="fas fa-moon ms-1"></i>
+                                                    {% elif assignment.time_slot == 'peaktime_duo' %}<i class="fas fa-user-group ms-1"></i>
                                                     {% endif %}
                                                 </div>
                                                 {% endfor %}
@@ -178,7 +183,12 @@
                                                     <i class="fas fa-fire"></i> {{ day.peaktime_count }}
                                                 </div>
                                                 {% endif %}
-                                                {% if day.warmup_count == 0 and day.peaktime_count == 0 and day.complete_count == 0 %}
+                                                {% if day.peaktime_duo_count > 0 %}
+                                                <div class="badge badge-solid-magenta w-100 mb-1" style="font-size: 0.65rem;">
+                                                    <i class="fas fa-user-group"></i> {{ day.peaktime_duo_count }}
+                                                </div>
+                                                {% endif %}
+                                                {% if day.warmup_count == 0 and day.peaktime_count == 0 and day.complete_count == 0 and day.peaktime_duo_count == 0 %}
                                                 <div class="badge badge-solid-danger w-100" style="font-size: 0.65rem;">
                                                     <i class="fas fa-times"></i> Aucun
                                                 </div>
@@ -413,6 +423,31 @@
         </div>
     </div>
 </div>
+<!-- Modal: Auto-assignation -->
+<div class="modal fade" id="autoAssignModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-wand-magic-sparkles me-2" style="color: var(--accent);"></i>Auto-assignation equitable
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="autoAssignBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border" style="color: var(--accent);" role="status"></div>
+                    <p class="mt-2" style="color: var(--text-muted);">Calcul en cours...</p>
+                </div>
+            </div>
+            <div class="modal-footer" id="autoAssignFooter" style="display: none;">
+                <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-accent" onclick="confirmAutoAssign()">
+                    <i class="fas fa-check me-1"></i>Valider la selection
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_css %}
@@ -500,6 +535,21 @@ function unassignDJ(date, timeSlot) {
     });
 }
 
+function unassignDJById(assignmentId) {
+    if (!confirm('Retirer cette assignation ?')) return;
+
+    fetch('/admin/unassign-dj-by-id', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({assignment_id: assignmentId})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) location.reload();
+        else alert('Erreur: ' + data.error);
+    });
+}
+
 function approveDJ(djId) {
     if (!confirm('Approuver ce DJ ?')) return;
 
@@ -527,6 +577,252 @@ function rejectDJ(djId) {
     .then(data => {
         if (data.success) location.reload();
         else alert('Erreur: ' + data.error);
+    });
+}
+
+// === Auto-assignation avec drag & drop ===
+let autoAssignData = [];
+let djColors = {};
+const DJ_PALETTE = [
+    '#c8ff00', '#ff3366', '#00e676', '#00b0ff', '#ffab00',
+    '#e040fb', '#ff6e40', '#64ffda', '#7c4dff', '#eeff41',
+    '#ff4081', '#18ffff', '#f4511e', '#76ff03', '#536dfe'
+];
+
+function getDjColor(djName) {
+    if (!djColors[djName]) {
+        const idx = Object.keys(djColors).length % DJ_PALETTE.length;
+        djColors[djName] = DJ_PALETTE[idx];
+    }
+    return djColors[djName];
+}
+
+function getSlotInfo(slot) {
+    const map = {
+        'complete': {cls: 'success', label: 'Complete', icon: 'moon'},
+        'warmup': {cls: 'info', label: 'Warm-up', icon: 'sun'},
+        'peaktime': {cls: 'warning', label: 'Peak time', icon: 'fire'},
+        'peaktime_duo': {cls: 'magenta', label: 'Peak x2', icon: 'user-group'}
+    };
+    return map[slot] || {cls: 'secondary', label: slot, icon: 'question'};
+}
+
+function buildSummary() {
+    const summary = {};
+    autoAssignData.forEach((s, i) => {
+        if (!s.selected) return;
+        if (!summary[s.dj_id]) {
+            summary[s.dj_id] = {dj_name: s.dj_name, existing: s.existing || 0, suggested: 0, total_tarif: 0};
+        }
+        summary[s.dj_id].suggested++;
+        summary[s.dj_id].total_tarif += s.tarif;
+    });
+    return Object.values(summary);
+}
+
+function renderAutoAssign() {
+    const djSummary = buildSummary();
+    const selectedCount = autoAssignData.filter(s => s.selected).length;
+
+    let summaryHtml = '<div class="auto-assign-summary mb-3">';
+    summaryHtml += `<div class="d-flex gap-3 flex-wrap mb-3">
+        <span class="badge badge-solid-accent" style="padding: 0.5em 1em;">
+            <i class="fas fa-calendar-plus me-1"></i>${selectedCount} suggestion(s) selectionnee(s)
+        </span>
+    </div>`;
+    summaryHtml += '<div class="row g-2 mb-3" id="djSummaryChips">';
+    djSummary.forEach(dj => {
+        const color = getDjColor(dj.dj_name);
+        summaryHtml += `
+            <div class="col-auto">
+                <div class="auto-assign-dj-chip" style="border-left: 3px solid ${color};">
+                    <i class="fas fa-headphones" style="color: ${color};"></i>
+                    <strong>${dj.dj_name}</strong>
+                    <span class="badge bg-secondary">${dj.existing}</span>
+                    <span class="badge badge-solid-accent">+${dj.suggested}</span>
+                    <span class="badge badge-solid-success">${dj.total_tarif}&euro;</span>
+                </div>
+            </div>`;
+    });
+    summaryHtml += '</div></div>';
+
+    let tableHtml = '<div class="table-responsive"><table class="table table-hover mb-0">';
+    tableHtml += `<thead><tr>
+        <th><input type="checkbox" id="autoAssignSelectAll" ${autoAssignData.every(s=>s.selected)?'checked':''} onchange="toggleAllAutoAssign(this)"></th>
+        <th>Date</th><th>DJ</th><th>Creneau</th><th>Tarif</th><th>Changer DJ</th>
+    </tr></thead><tbody>`;
+
+    autoAssignData.forEach((s, i) => {
+        const info = getSlotInfo(s.time_slot);
+        const color = getDjColor(s.dj_name);
+        const rowClass = s.selected ? '' : 'style="opacity:0.4;"';
+        tableHtml += `<tr ${rowClass} draggable="true" data-index="${i}"
+            ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondrop="onDrop(event)">
+            <td><input type="checkbox" class="auto-assign-check" data-index="${i}" ${s.selected?'checked':''}
+                onchange="toggleSuggestion(${i}, this.checked)"></td>
+            <td><strong>${s.date_formatted}</strong></td>
+            <td>
+                <span class="aa-dj-tag" style="background: ${color}22; color: ${color}; border: 1px solid ${color}44; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem;">
+                    <i class="fas fa-headphones" style="font-size: 0.65rem;"></i> ${s.dj_name}
+                </span>
+            </td>
+            <td><span class="badge badge-solid-${info.cls}"><i class="fas fa-${info.icon} me-1"></i>${info.label}</span></td>
+            <td><strong style="color: var(--success);">${s.tarif}&euro;</strong></td>
+            <td>
+                <select class="form-select form-select-sm" style="width: auto; min-width: 120px; font-size: 0.75rem;"
+                    onchange="changeDJ(${i}, this.value)">
+                    ${s.alternatives.map(alt =>
+                        `<option value="${alt.dj_id}" ${alt.dj_id === s.dj_id ? 'selected' : ''}>${alt.dj_name} (${alt.count} sets)</option>`
+                    ).join('')}
+                </select>
+            </td>
+        </tr>`;
+    });
+
+    tableHtml += '</tbody></table></div>';
+    document.getElementById('autoAssignBody').innerHTML = summaryHtml + tableHtml;
+    document.getElementById('autoAssignFooter').style.display = 'flex';
+}
+
+function toggleSuggestion(idx, checked) {
+    autoAssignData[idx].selected = checked;
+    renderAutoAssign();
+}
+
+function changeDJ(idx, newDjId) {
+    const alt = autoAssignData[idx].alternatives.find(a => a.dj_id == newDjId);
+    if (alt) {
+        autoAssignData[idx].dj_id = alt.dj_id;
+        autoAssignData[idx].dj_name = alt.dj_name;
+        autoAssignData[idx].tarif = alt.tarif;
+        renderAutoAssign();
+    }
+}
+
+// Drag & drop pour echanger des DJs entre lignes
+let dragSrcIdx = null;
+function onDragStart(e) {
+    dragSrcIdx = parseInt(e.currentTarget.dataset.index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.currentTarget.style.opacity = '0.5';
+}
+function onDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.style.background = 'var(--bg-hover)';
+}
+function onDrop(e) {
+    e.preventDefault();
+    e.currentTarget.style.background = '';
+    const targetIdx = parseInt(e.currentTarget.dataset.index);
+    if (dragSrcIdx !== null && dragSrcIdx !== targetIdx) {
+        // Echanger les DJs
+        const srcDj = {dj_id: autoAssignData[dragSrcIdx].dj_id, dj_name: autoAssignData[dragSrcIdx].dj_name};
+        const tgtDj = {dj_id: autoAssignData[targetIdx].dj_id, dj_name: autoAssignData[targetIdx].dj_name};
+        autoAssignData[dragSrcIdx].dj_id = tgtDj.dj_id;
+        autoAssignData[dragSrcIdx].dj_name = tgtDj.dj_name;
+        autoAssignData[targetIdx].dj_id = srcDj.dj_id;
+        autoAssignData[targetIdx].dj_name = srcDj.dj_name;
+        // Recalculer les tarifs
+        autoAssignData[dragSrcIdx].tarif = autoAssignData[dragSrcIdx].alternatives.find(a => a.dj_id == tgtDj.dj_id)?.tarif || autoAssignData[dragSrcIdx].tarif;
+        autoAssignData[targetIdx].tarif = autoAssignData[targetIdx].alternatives.find(a => a.dj_id == srcDj.dj_id)?.tarif || autoAssignData[targetIdx].tarif;
+        renderAutoAssign();
+    }
+    dragSrcIdx = null;
+}
+
+function autoAssign() {
+    const month = document.querySelector('select[name="month"]').value;
+    const year = document.querySelector('select[name="year"]').value;
+
+    document.getElementById('autoAssignBody').innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border" style="color: var(--accent);" role="status"></div>
+            <p class="mt-2" style="color: var(--text-muted);">Calcul en cours...</p>
+        </div>`;
+    document.getElementById('autoAssignFooter').style.display = 'none';
+    djColors = {};
+    new bootstrap.Modal(document.getElementById('autoAssignModal')).show();
+
+    fetch('/admin/auto-assign', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({month: parseInt(month), year: parseInt(year)})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) {
+            document.getElementById('autoAssignBody').innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--danger);"></i>
+                    <p class="mt-2">Erreur: ${data.error}</p>
+                </div>`;
+            return;
+        }
+
+        if (data.suggestions.length === 0) {
+            document.getElementById('autoAssignBody').innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; color: var(--success);"></i>
+                    <p class="mt-2">Aucune date a remplir ou aucune disponibilite.</p>
+                </div>`;
+            return;
+        }
+
+        // Ajouter le flag selected et les infos existing
+        autoAssignData = data.suggestions.map(s => ({...s, selected: true, alternatives: s.alternatives || [{dj_id: s.dj_id, dj_name: s.dj_name, tarif: s.tarif, count: 0}]}));
+
+        // Pré-assigner les couleurs
+        data.dj_summary.forEach(dj => getDjColor(dj.dj_name));
+        autoAssignData.forEach(s => { s.existing = data.dj_summary.find(d => d.dj_name === s.dj_name)?.existing || 0; });
+
+        renderAutoAssign();
+    })
+    .catch(err => {
+        document.getElementById('autoAssignBody').innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--danger);"></i>
+                <p class="mt-2">Erreur: ${err.message}</p>
+            </div>`;
+    });
+}
+
+function toggleAllAutoAssign(el) {
+    autoAssignData.forEach(s => s.selected = el.checked);
+    renderAutoAssign();
+}
+
+function confirmAutoAssign() {
+    const selected = autoAssignData.filter(s => s.selected).map(s => ({
+        date: s.date,
+        dj_id: s.dj_id,
+        time_slot: s.time_slot
+    }));
+
+    if (selected.length === 0) {
+        alert('Aucune suggestion selectionnee.');
+        return;
+    }
+
+    if (!confirm(`Confirmer l'assignation de ${selected.length} date(s) ?`)) return;
+
+    fetch('/admin/bulk-assign', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({assignments: selected})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            let msg = `${data.created} assignation(s) creee(s) !`;
+            if (data.errors.length > 0) {
+                msg += `\n\nErreurs:\n${data.errors.join('\n')}`;
+            }
+            alert(msg);
+            location.reload();
+        } else {
+            alert('Erreur: ' + data.error);
+        }
     });
 }
 </script>

@@ -3,7 +3,7 @@
 {% block title %}Planning Mensuel - LES FOLIES{% endblock %}
 
 {% block content %}
-<div class="container py-4">
+<div class="container-fluid py-4 px-3 px-lg-4">
 
     <!-- Header + Nav -->
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4 fade-in-up">
@@ -33,60 +33,65 @@
         <span class="badge badge-solid-accent" style="padding: 0.5em 1em;">
             <i class="fas fa-fire me-1"></i>Peak time (2h-6h)
         </span>
+        <span class="badge badge-solid-magenta" style="padding: 0.5em 1em;">
+            <i class="fas fa-user-group me-1"></i>Peak x2 (2h-6h)
+        </span>
     </div>
 
-    <!-- Grid -->
-    <div class="row g-3">
-        {% for date_str, day_data in planning_by_date.items() %}
-        <div class="col-md-6 col-lg-4">
-            <div class="planning-day-card {% if day_data.is_weekend %}is-weekend{% endif %} fade-in-up">
-                <!-- Day Header -->
-                <div class="day-header {% if day_data.is_weekend %}weekend{% else %}weekday{% endif %}">
-                    <div>
-                        <div class="day-number">{{ day_data.date.strftime('%d') }}</div>
-                        <div class="day-name">{{ day_data.day_name }}</div>
-                    </div>
-                    {% if day_data.is_weekend %}
-                    <span class="badge badge-accent" style="font-size: 0.7rem;">
-                        <i class="fas fa-music me-1"></i>Ouvert
-                    </span>
+    <!-- Calendar Grid -->
+    <div class="calendar-grid fade-in-up stagger-2">
+        <!-- Day headers -->
+        <div class="calendar-header">
+            <div class="calendar-header-cell">Lun</div>
+            <div class="calendar-header-cell">Mar</div>
+            <div class="calendar-header-cell">Mer</div>
+            <div class="calendar-header-cell calendar-header-weekend">Jeu</div>
+            <div class="calendar-header-cell calendar-header-weekend">Ven</div>
+            <div class="calendar-header-cell calendar-header-weekend">Sam</div>
+            <div class="calendar-header-cell">Dim</div>
+        </div>
+
+        <!-- Weeks -->
+        {% for week in weeks %}
+        <div class="calendar-week">
+            {% for day in week %}
+            <div class="calendar-cell {% if day and day.is_weekend %}calendar-cell-weekend{% endif %} {% if not day %}calendar-cell-empty{% endif %}">
+                {% if day %}
+                <div class="calendar-cell-header">
+                    <span class="calendar-day-num">{{ day.date.strftime('%d') }}</span>
+                    {% if day.is_weekend %}
+                    <span class="calendar-badge-open"><i class="fas fa-music"></i></span>
                     {% endif %}
                 </div>
-
-                <!-- Assignments -->
-                <div class="day-body">
-                    {% if day_data.assignments %}
-                        {% for assignment in day_data.assignments %}
-                        <div class="dj-assignment-block {% if assignment.time_slot == 'complete' %}slot-complete{% elif assignment.time_slot == 'warmup' %}slot-warmup{% else %}slot-peaktime{% endif %}">
-                            <div class="d-flex align-items-center mb-1">
-                                <i class="fas fa-headphones me-2" style="color: var(--accent); font-size: 0.9rem;"></i>
-                                <strong style="font-size: 1rem;">{{ assignment.user.dj_name }}</strong>
-                            </div>
-                            <div style="font-size: 0.8rem; color: var(--text-muted);">
-                                <i class="fas fa-clock me-1"></i>
-                                {% if assignment.time_slot == 'complete' %}Complete (00h-6h)
-                                {% elif assignment.time_slot == 'warmup' %}Warm-up (00h-2h)
-                                {% else %}Peak time (2h-6h)
-                                {% endif %}
-                            </div>
-                            <div style="font-size: 0.85rem; font-weight: 700; color: var(--success); margin-top: 0.25rem;">
-                                {{ assignment.tarif }}&euro;
+                <div class="calendar-cell-body">
+                    {% if day.assignments %}
+                        {% for assignment in day.assignments %}
+                        <div class="calendar-assignment {% if assignment.time_slot == 'complete' %}ca-complete{% elif assignment.time_slot == 'warmup' %}ca-warmup{% elif assignment.time_slot == 'peaktime_duo' %}ca-peaktime-duo{% else %}ca-peaktime{% endif %}">
+                            <div class="ca-dj">{% if assignment.time_slot == 'peaktime_duo' %}<i class="fas fa-user-group"></i>{% else %}<i class="fas fa-headphones"></i>{% endif %} {{ assignment.user.dj_name }}</div>
+                            <div class="ca-info">
+                                <span class="ca-slot">
+                                    {% if assignment.time_slot == 'complete' %}00h-6h
+                                    {% elif assignment.time_slot == 'warmup' %}00h-2h
+                                    {% elif assignment.time_slot == 'peaktime_duo' %}2h-6h x2
+                                    {% else %}2h-6h
+                                    {% endif %}
+                                </span>
+                                <span class="ca-tarif">{{ assignment.tarif }}&euro;</span>
                             </div>
                             {% if assignment.notes %}
-                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; font-style: italic; border-top: 1px solid var(--border); padding-top: 0.25rem;">
-                                {{ assignment.notes }}
-                            </div>
+                            <div class="ca-notes">{{ assignment.notes }}</div>
                             {% endif %}
                         </div>
                         {% endfor %}
                     {% else %}
-                    <div class="empty-state" style="padding: 2rem 0.5rem;">
-                        <i class="fas fa-calendar-xmark" style="font-size: 1.5rem;"></i>
-                        <p class="mb-0" style="font-size: 0.8rem;">Aucun DJ</p>
+                    <div class="calendar-empty">
+                        <i class="fas fa-minus" style="opacity: 0.3;"></i>
                     </div>
                     {% endif %}
                 </div>
+                {% endif %}
             </div>
+            {% endfor %}
         </div>
         {% endfor %}
     </div>

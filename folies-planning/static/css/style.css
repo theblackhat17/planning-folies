@@ -16,9 +16,9 @@
     --accent-dim: rgba(200, 255, 0, 0.15);
     --accent-glow: rgba(200, 255, 0, 0.4);
 
-    /* Secondary - Hot Magenta */
-    --magenta: #ff3366;
-    --magenta-dim: rgba(255, 51, 102, 0.15);
+    /* Secondary - Hot Magenta (peaktime duo) */
+    --magenta: #e040fb;
+    --magenta-dim: rgba(224, 64, 251, 0.15);
 
     /* Semantic */
     --success: #00e676;
@@ -655,7 +655,7 @@ a:hover {
 .badge-magenta {
     background: var(--magenta-dim);
     color: var(--magenta);
-    border: 1px solid rgba(255, 51, 102, 0.15);
+    border: 1px solid rgba(224, 64, 251, 0.15);
 }
 
 .badge.bg-success {
@@ -712,6 +712,11 @@ a:hover {
 .badge-solid-accent {
     background: var(--accent) !important;
     color: #0a0a14 !important;
+}
+
+.badge-solid-magenta {
+    background: var(--magenta) !important;
+    color: white !important;
 }
 
 .badge-assigned {
@@ -1185,82 +1190,250 @@ body.light-mode .modal-header .btn-close {
     color: var(--text-muted);
 }
 
-/* --- Planning Mensuel Cards --- */
-.planning-day-card {
-    background: var(--bg-surface);
+/* --- Planning Mensuel Calendar Grid --- */
+.calendar-grid {
+    width: 100%;
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     overflow: hidden;
-    transition: all var(--transition-med);
+    background: var(--bg-surface);
 }
 
-.planning-day-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--border-accent);
-}
-
-.planning-day-card.is-weekend {
-    border-color: var(--accent);
-    border-width: 1px;
-    box-shadow: inset 0 0 30px rgba(200, 255, 0, 0.03);
-}
-
-.planning-day-card .day-header {
-    padding: 0.75rem 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+.calendar-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: var(--bg-elevated);
     border-bottom: 1px solid var(--border);
 }
 
-.planning-day-card .day-header.weekend {
-    background: linear-gradient(135deg, rgba(200, 255, 0, 0.08), rgba(0, 255, 136, 0.05));
+.calendar-header-cell {
+    padding: 0.6rem 0.4rem;
+    text-align: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
 }
 
-.planning-day-card .day-header.weekday {
-    background: var(--bg-elevated);
+.calendar-header-cell.calendar-header-weekend {
+    color: var(--accent);
 }
 
-.planning-day-card .day-number {
+.calendar-week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 1px solid var(--border);
+}
+
+.calendar-week:last-child {
+    border-bottom: none;
+}
+
+.calendar-cell {
+    min-height: 90px;
+    border-right: 1px solid var(--border);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    transition: background var(--transition-fast);
+}
+
+.calendar-cell:last-child {
+    border-right: none;
+}
+
+.calendar-cell:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.calendar-cell-empty {
+    background: var(--bg-base);
+    opacity: 0.4;
+}
+
+.calendar-cell-weekend {
+    background: rgba(200, 255, 0, 0.03);
+}
+
+.calendar-cell-weekend:hover {
+    background: rgba(200, 255, 0, 0.06);
+}
+
+.calendar-cell-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.calendar-day-num {
     font-family: 'Syne', sans-serif;
     font-weight: 800;
-    font-size: 1.5rem;
-    line-height: 1;
+    font-size: 0.95rem;
+    color: var(--text-primary);
 }
 
-.planning-day-card .day-name {
-    font-size: 0.8rem;
+.calendar-cell-weekend .calendar-day-num {
+    color: var(--accent);
+}
+
+.calendar-badge-open {
+    font-size: 0.6rem;
+    color: var(--accent);
+    opacity: 0.7;
+}
+
+.calendar-cell-body {
+    flex: 1;
+    padding: 0.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.calendar-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
     color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    font-size: 0.7rem;
 }
 
-.planning-day-card .day-body {
-    padding: 1rem;
+/* --- Calendar Assignment Block --- */
+.calendar-assignment {
+    padding: 0.3rem 0.4rem;
+    border-radius: var(--radius-xs, 4px);
+    border-left: 2px solid;
+    font-size: 0.7rem;
+    line-height: 1.3;
 }
 
-/* --- DJ Card in Planning --- */
-.dj-assignment-block {
-    padding: 0.75rem;
-    border-radius: var(--radius-sm);
-    margin-bottom: 0.5rem;
-    border-left: 3px solid;
-}
-
-.dj-assignment-block.slot-complete {
+.calendar-assignment.ca-complete {
     background: var(--success-dim);
     border-left-color: var(--success);
 }
 
-.dj-assignment-block.slot-warmup {
+.calendar-assignment.ca-warmup {
     background: var(--info-dim);
     border-left-color: var(--info);
 }
 
-.dj-assignment-block.slot-peaktime {
+.calendar-assignment.ca-peaktime {
     background: var(--accent-dim);
     border-left-color: var(--accent);
+}
+
+.calendar-assignment.ca-peaktime-duo {
+    background: var(--magenta-dim);
+    border-left-color: var(--magenta);
+}
+
+.ca-dj {
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ca-dj i {
+    color: var(--accent);
+    font-size: 0.6rem;
+    margin-right: 0.15rem;
+}
+
+.ca-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    margin-top: 0.1rem;
+}
+
+.ca-tarif {
+    font-weight: 700;
+    color: var(--success);
+}
+
+.ca-notes {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 0.1rem;
+    padding-top: 0.1rem;
+    border-top: 1px solid var(--border);
+}
+
+/* --- Calendar Responsive (mobile) --- */
+@media (max-width: 768px) {
+    .calendar-grid {
+        overflow-x: auto;
+    }
+
+    .calendar-header,
+    .calendar-week {
+        min-width: 600px;
+    }
+
+    .calendar-cell {
+        min-height: 70px;
+    }
+
+    .calendar-assignment {
+        font-size: 0.6rem;
+    }
+
+    .ca-info {
+        font-size: 0.55rem;
+    }
+}
+
+/* --- Auto-assignation --- */
+.auto-assign-summary {
+    padding: 1rem;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+}
+
+.auto-assign-dj-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+}
+
+.auto-assign-dj-chip i {
+    color: var(--accent);
+    font-size: 0.75rem;
+}
+
+/* Drag & drop rows in auto-assign */
+.table tbody tr[draggable="true"] {
+    cursor: grab;
+    transition: background var(--transition-fast), opacity var(--transition-fast);
+}
+
+.table tbody tr[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.aa-dj-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap;
 }
 
 /* --- Breadcrumb --- */

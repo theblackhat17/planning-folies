@@ -372,19 +372,22 @@ def generate_admin_calendar(year, month):
                     warmup_count = len(avail_by_date.get((day_date, 'warmup'), []))
                     peaktime_count = len(avail_by_date.get((day_date, 'peaktime'), []))
                     complete_count = len(avail_by_date.get((day_date, 'complete'), []))
-                    
+                    peaktime_duo_count = len(avail_by_date.get((day_date, 'peaktime_duo'), []))
+
+                    total_avail = warmup_count + peaktime_count + complete_count + peaktime_duo_count
+
                     # Déterminer le statut
                     if assignments_list:
                         status = 'assigned'
                     elif is_past:
                         status = 'past'
-                    elif warmup_count + peaktime_count + complete_count > 1:
+                    elif total_avail > 1:
                         status = 'multiple'
-                    elif warmup_count + peaktime_count + complete_count == 1:
+                    elif total_avail == 1:
                         status = 'single'
                     else:
                         status = 'none'
-                    
+
                     week_data.append({
                         'day': day,
                         'date': day_date.isoformat(),
@@ -393,6 +396,7 @@ def generate_admin_calendar(year, month):
                         'warmup_count': warmup_count,
                         'peaktime_count': peaktime_count,
                         'complete_count': complete_count,
+                        'peaktime_duo_count': peaktime_duo_count,
                         'status': status
                     })
             calendar_data.append(week_data)
@@ -578,43 +582,62 @@ def admin_assign_dj():
             return jsonify({'success': False, 'error': 'DJ not available on this date'})
         
         original_time_slot = availability.time_slot
-        
+
         # Récupérer tous les assignments existants pour cette date
         existing_assignments = Assignment.query.filter_by(date=day_date).all()
         assigned_slots = {a.time_slot for a in existing_assignments}
-        
+
         has_complete = 'complete' in assigned_slots
         has_warmup = 'warmup' in assigned_slots
         has_peaktime = 'peaktime' in assigned_slots
-        
+        has_peaktime_duo = 'peaktime_duo' in assigned_slots
+        peaktime_duo_count = sum(1 for a in existing_assignments if a.time_slot == 'peaktime_duo')
+
         # Déterminer le créneau à assigner
         actual_time_slot = original_time_slot
-        
+
         # Si déjà une soirée complète assignée → impossible
         if has_complete:
             return jsonify({'success': False, 'error': 'Complete night already assigned'})
-        
-        # Si warmup déjà pris
-        if has_warmup:
-            if original_time_slot == 'warmup':
-                return jsonify({'success': False, 'error': 'Warmup already assigned'})
-            elif original_time_slot == 'complete':
-                # DJ dispo en "complete" peut faire le peaktime
-                actual_time_slot = 'peaktime'
-            # Si original_time_slot == 'peaktime' → OK, on garde peaktime
-        
-        # Si peaktime déjà pris
-        if has_peaktime:
-            if original_time_slot == 'peaktime':
+
+        # Compter le total de DJs sur le créneau peak (solo + duo)
+        total_peak_djs = peaktime_duo_count + (1 if has_peaktime else 0)
+
+        # Peaktime duo : compatible avec peaktime solo existant
+        if original_time_slot == 'peaktime_duo':
+            if total_peak_djs >= 2:
+                return jsonify({'success': False, 'error': 'Peak time déjà plein (2 DJs max)'})
+            actual_time_slot = 'peaktime_duo'
+        elif original_time_slot == 'peaktime':
+            # Si un peaktime_duo existe, ce DJ rejoint en duo
+            if has_peaktime_duo:
+                if total_peak_djs >= 2:
+                    return jsonify({'success': False, 'error': 'Peak time déjà plein (2 DJs max)'})
+                actual_time_slot = 'peaktime_duo'
+            elif has_peaktime:
                 return jsonify({'success': False, 'error': 'Peak time already assigned'})
-            elif original_time_slot == 'complete':
-                # DJ dispo en "complete" peut faire le warmup
-                actual_time_slot = 'warmup'
-            # Si original_time_slot == 'warmup' → OK, on garde warmup
-        
-        # Vérifier que le créneau final n'est pas déjà pris
-        if actual_time_slot in assigned_slots:
-            return jsonify({'success': False, 'error': f'{actual_time_slot.capitalize()} already assigned'})
+            else:
+                actual_time_slot = 'peaktime'
+        else:
+            peak_occupied = has_peaktime or has_peaktime_duo
+
+            # Si warmup déjà pris
+            if has_warmup:
+                if original_time_slot == 'warmup':
+                    return jsonify({'success': False, 'error': 'Warmup already assigned'})
+                elif original_time_slot == 'complete':
+                    if peak_occupied:
+                        return jsonify({'success': False, 'error': 'Soirée déjà complète'})
+                    actual_time_slot = 'peaktime'
+
+            # Si peak déjà pris
+            elif peak_occupied:
+                if original_time_slot == 'complete':
+                    actual_time_slot = 'warmup'
+
+            # Vérifier que le créneau final n'est pas déjà pris (sauf peaktime_duo)
+            if actual_time_slot != 'peaktime_duo' and actual_time_slot in assigned_slots:
+                return jsonify({'success': False, 'error': f'{actual_time_slot.capitalize()} already assigned'})
         
         # Créer l'assignment avec le créneau adapté
         assignment = Assignment(
@@ -754,41 +777,44 @@ def admin_day_details():
     
     # Assignments existants
     assignments = Assignment.query.filter_by(date=day_date).all()
-    
+
     # Déterminer quels créneaux sont encore disponibles
     assigned_slots = {a.time_slot for a in assignments}
     has_complete = 'complete' in assigned_slots
     has_warmup = 'warmup' in assigned_slots
     has_peaktime = 'peaktime' in assigned_slots
-    
+    has_peaktime_duo = 'peaktime_duo' in assigned_slots
+    peaktime_duo_count = sum(1 for a in assignments if a.time_slot == 'peaktime_duo')
+
     # DJs disponibles
     availabilities = Availability.query.filter_by(
         date=day_date,
         is_available=True
     ).all()
-    
+
     html = f'<h6 class="mb-3">Date : {day_date.strftime("%A %d %B %Y")}</h6>'
-    
+
+    slot_emoji = {'warmup': '🌅', 'peaktime': '🔥', 'complete': '🌙', 'peaktime_duo': '👥'}
+    slot_name = {'warmup': 'Warm-up', 'peaktime': 'Peak time', 'complete': 'Complète', 'peaktime_duo': 'Peak à 2'}
+
     # Afficher les assignments existants
     if assignments:
         html += '<h6>Déjà assignés :</h6><div class="mb-3">'
         for assignment in assignments:
-            slot_emoji = {'warmup': '🌅', 'peaktime': '🔥', 'complete': '🌙'}
-            slot_name = {'warmup': 'Warm-up', 'peaktime': 'Peak time', 'complete': 'Complète'}
             html += f'''
             <div class="alert alert-info d-flex justify-content-between align-items-center mb-2">
                 <strong>
-                    {slot_emoji.get(assignment.time_slot, '')} 
-                    {assignment.user.dj_name} - {slot_name.get(assignment.time_slot, '')} 
+                    {slot_emoji.get(assignment.time_slot, '')}
+                    {assignment.user.dj_name} - {slot_name.get(assignment.time_slot, '')}
                     ({assignment.tarif}€)
                 </strong>
-                <button class="btn btn-sm btn-danger" onclick="unassignDJ('{date_str}', '{assignment.time_slot}')">
+                <button class="btn btn-sm btn-danger" onclick="unassignDJById({assignment.id})">
                     <i class="fas fa-times"></i> Retirer
                 </button>
             </div>
             '''
         html += '</div>'
-    
+
     # Si soirée complète déjà assignée, on ne peut plus rien faire
     if has_complete:
         html += '<div class="alert alert-warning">Soirée complète déjà assignée, aucune autre assignation possible.</div>'
@@ -797,50 +823,60 @@ def admin_day_details():
             'date_formatted': day_date.strftime('%A %d %B %Y'),
             'html': html
         })
-    
+
     # Filtrer les DJs disponibles selon ce qui reste à assigner
     available_djs = []
     for avail in availabilities:
-        # Si warmup ET peaktime déjà pris, seuls les "complete" peuvent encore être assignés
-        if has_warmup and has_peaktime:
+        # Vérifier si ce DJ est déjà assigné ce jour
+        already_assigned = any(a.user_id == avail.user_id for a in assignments)
+        if already_assigned:
+            continue
+
+        # Peaktime duo : peut rejoindre si pas encore 2 DJs sur le créneau 2h-6h
+        # Compatible avec peaktime solo (le solo devient duo à 100€ chacun)
+        if avail.time_slot == 'peaktime_duo':
+            total_peak_slots = peaktime_duo_count + (1 if has_peaktime else 0)
+            if total_peak_slots < 2 and not has_complete:
+                avail.assignable_as = 'peaktime_duo'
+                available_djs.append(avail)
+            continue
+
+        # Peaktime solo : compatible avec peaktime_duo existant (rejoint comme duo)
+        if avail.time_slot == 'peaktime':
+            if has_peaktime_duo:
+                total_peak_slots = peaktime_duo_count
+                if total_peak_slots < 2 and not has_complete:
+                    avail.assignable_as = 'peaktime_duo'
+                    available_djs.append(avail)
+            elif not has_peaktime and not has_complete:
+                available_djs.append(avail)
+            continue
+
+        # Si warmup ET créneau peak déjà pris
+        peak_occupied = has_peaktime or has_peaktime_duo
+        if has_warmup and peak_occupied:
             if avail.time_slot == 'complete':
                 available_djs.append(avail)
-        # Si warmup pris, on peut assigner peaktime ou complete (en peaktime)
         elif has_warmup:
-            if avail.time_slot == 'peaktime':
-                available_djs.append(avail)
-            elif avail.time_slot == 'complete':
-                # DJ disponible en "complete" peut faire le peaktime
+            if avail.time_slot == 'complete':
                 avail.assignable_as = 'peaktime'
                 available_djs.append(avail)
-        # Si peaktime pris, on peut assigner warmup ou complete (en warmup)
-        elif has_peaktime:
+        elif peak_occupied:
             if avail.time_slot == 'warmup':
                 available_djs.append(avail)
             elif avail.time_slot == 'complete':
-                # DJ disponible en "complete" peut faire le warmup
                 avail.assignable_as = 'warmup'
                 available_djs.append(avail)
-        # Rien n'est pris, tous les DJs sont assignables
         else:
             available_djs.append(avail)
-    
+
     if available_djs:
         html += '<h6>DJs Disponibles :</h6><div class="list-group mb-3">'
         for avail in available_djs:
-            slot_emoji = {'warmup': '🌅', 'peaktime': '🔥', 'complete': '🌙'}
-            slot_name = {'warmup': 'Warm-up', 'peaktime': 'Peak time', 'complete': 'Complète'}
-            
-            # Vérifier si ce DJ est déjà assigné
-            already_assigned = any(a.user_id == avail.user_id for a in assignments)
-            if already_assigned:
-                continue
-            
-            # Déterminer le créneau à afficher
             display_slot = getattr(avail, 'assignable_as', avail.time_slot)
             display_name = slot_name.get(display_slot, display_slot)
             display_emoji = slot_emoji.get(display_slot, '')
-            
+
             html += f'''
             <div class="list-group-item d-flex justify-content-between align-items-center">
                 <span>
@@ -855,7 +891,7 @@ def admin_day_details():
         html += '</div>'
     else:
         html += '<div class="alert alert-warning">Aucun DJ disponible pour les créneaux restants</div>'
-    
+
     return jsonify({
         'success': True,
         'date_formatted': day_date.strftime('%A %d %B %Y'),
@@ -886,7 +922,307 @@ def admin_unassign_dj():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
-    
+
+# Route pour retirer un assignment par ID (supporte peaktime_duo)
+@app.route('/admin/unassign-dj-by-id', methods=['POST'])
+@login_required
+def admin_unassign_dj_by_id():
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    data = request.get_json()
+    assignment_id = data.get('assignment_id')
+
+    try:
+        assignment = Assignment.query.get(assignment_id)
+        if not assignment:
+            return jsonify({'success': False, 'error': 'No assignment found'})
+
+        db.session.delete(assignment)
+        db.session.commit()
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+# Route auto-assignation équitable
+@app.route('/admin/auto-assign', methods=['POST'])
+@login_required
+def admin_auto_assign():
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    import random
+    from calendar import monthrange
+
+    data = request.get_json()
+    year = data.get('year', datetime.now().year)
+    month = data.get('month', datetime.now().month)
+
+    first_day = date(year, month, 1)
+    last_day = date(year, month, monthrange(year, month)[1])
+    today = date.today()
+
+    # 1. Récupérer les dates futures non-assignées du mois
+    existing_assignments = Assignment.query.filter(
+        Assignment.date >= first_day,
+        Assignment.date <= last_day
+    ).all()
+
+    # Dates déjà assignées (avec leurs slots occupés)
+    assigned_by_date = {}
+    for a in existing_assignments:
+        assigned_by_date.setdefault(a.date, set()).add(a.time_slot)
+
+    # Compter peaktime_duo par date
+    duo_count_by_date = {}
+    for a in existing_assignments:
+        if a.time_slot == 'peaktime_duo':
+            duo_count_by_date[a.date] = duo_count_by_date.get(a.date, 0) + 1
+
+    # Compter les assignments existants par DJ ce mois
+    dj_assignment_count = {}
+    for a in existing_assignments:
+        dj_assignment_count[a.user_id] = dj_assignment_count.get(a.user_id, 0) + 1
+
+    # 2. Récupérer toutes les disponibilités du mois
+    availabilities = Availability.query.filter(
+        Availability.date >= first_day,
+        Availability.date <= last_day,
+        Availability.is_available == True
+    ).all()
+
+    # Organiser les dispos par date
+    avail_by_date = {}
+    for av in availabilities:
+        avail_by_date.setdefault(av.date, []).append(av)
+
+    # 3. Identifier les dates à remplir (futures, avec des dispos, pas complètement assignées)
+    dates_to_fill = []
+    current = max(first_day, today + timedelta(days=1))  # Que les dates futures
+    while current <= last_day:
+        assigned_slots = assigned_by_date.get(current, set())
+        # Si 'complete' est déjà assigné, la date est pleine
+        if 'complete' in assigned_slots:
+            current += timedelta(days=1)
+            continue
+        # Si warmup ET peak plein (solo ou duo avec 2 DJs), la date est pleine
+        total_peak = duo_count_by_date.get(current, 0) + (1 if 'peaktime' in assigned_slots else 0)
+        peaktime_full = total_peak >= 2
+        if 'warmup' in assigned_slots and peaktime_full:
+            current += timedelta(days=1)
+            continue
+        # S'il y a des DJs disponibles
+        if current in avail_by_date:
+            dates_to_fill.append(current)
+        current += timedelta(days=1)
+
+    # 4. Trier par contrainte (dates avec le moins de DJs disponibles en premier)
+    dates_to_fill.sort(key=lambda d: len(avail_by_date.get(d, [])))
+
+    # 5. Algorithme greedy d'assignation
+    suggestions = []
+    sim_assigned = {d: set(slots) for d, slots in assigned_by_date.items()}
+    sim_counts = dict(dj_assignment_count)
+    sim_dj_by_date = {}
+    sim_duo_count = dict(duo_count_by_date)
+    for a in existing_assignments:
+        sim_dj_by_date.setdefault(a.date, set()).add(a.user_id)
+
+    for d in dates_to_fill:
+        assigned_slots = sim_assigned.get(d, set())
+        assigned_djs = sim_dj_by_date.get(d, set())
+        cur_duo_count = sim_duo_count.get(d, 0)
+
+        # Filtrer les DJs disponibles et non déjà assignés ce jour
+        candidates = []
+        has_peak_solo = 'peaktime' in assigned_slots
+        has_peak_duo = 'peaktime_duo' in assigned_slots
+        total_peak_djs = cur_duo_count + (1 if has_peak_solo else 0)
+        peak_occupied = has_peak_solo or has_peak_duo
+
+        for av in avail_by_date.get(d, []):
+            if av.user_id in assigned_djs:
+                continue
+            slot = av.time_slot
+            if 'complete' in assigned_slots:
+                continue
+            if slot == 'peaktime_duo':
+                if total_peak_djs < 2:
+                    candidates.append(av)
+                continue
+            if slot == 'peaktime':
+                # Peaktime solo compatible avec duo existant (rejoint en duo)
+                if has_peak_duo and total_peak_djs < 2:
+                    candidates.append(av)
+                elif not peak_occupied:
+                    candidates.append(av)
+                continue
+            if slot == 'warmup' and 'warmup' in assigned_slots:
+                continue
+            if slot == 'complete' and 'warmup' in assigned_slots and peak_occupied:
+                continue
+            candidates.append(av)
+
+        if not candidates:
+            continue
+
+        random.shuffle(candidates)
+        candidates.sort(key=lambda av: sim_counts.get(av.user_id, 0))
+
+        best = candidates[0]
+
+        actual_slot = best.time_slot
+        # Peaktime solo rejoint un duo existant → devient duo
+        if best.time_slot == 'peaktime' and has_peak_duo:
+            actual_slot = 'peaktime_duo'
+        elif best.time_slot == 'complete':
+            if 'warmup' in assigned_slots:
+                actual_slot = 'peaktime'
+            elif peak_occupied:
+                actual_slot = 'warmup'
+
+        tarif = calculate_tarif(d, actual_slot)
+
+        # Build alternatives list for this date
+        alternatives = []
+        for c in candidates:
+            c_slot = c.time_slot
+            if c.time_slot == 'peaktime' and has_peak_duo:
+                c_slot = 'peaktime_duo'
+            elif c.time_slot == 'complete':
+                if 'warmup' in assigned_slots:
+                    c_slot = 'peaktime'
+                elif peak_occupied:
+                    c_slot = 'warmup'
+            c_tarif = calculate_tarif(d, c_slot)
+            alternatives.append({
+                'dj_id': c.user_id,
+                'dj_name': c.user.dj_name,
+                'tarif': c_tarif,
+                'count': sim_counts.get(c.user_id, 0)
+            })
+
+        suggestions.append({
+            'date': d.strftime('%Y-%m-%d'),
+            'date_formatted': d.strftime('%A %d/%m'),
+            'dj_id': best.user_id,
+            'dj_name': best.user.dj_name,
+            'time_slot': actual_slot,
+            'original_slot': best.time_slot,
+            'tarif': tarif,
+            'alternatives': alternatives
+        })
+
+        sim_counts[best.user_id] = sim_counts.get(best.user_id, 0) + 1
+        sim_assigned.setdefault(d, set()).add(actual_slot)
+        sim_dj_by_date.setdefault(d, set()).add(best.user_id)
+        if actual_slot == 'peaktime_duo':
+            sim_duo_count[d] = sim_duo_count.get(d, 0) + 1
+
+    # 6. Calculer le résumé par DJ
+    dj_summary = {}
+    for s in suggestions:
+        dj_id = s['dj_id']
+        if dj_id not in dj_summary:
+            dj_summary[dj_id] = {
+                'dj_name': s['dj_name'],
+                'existing': dj_assignment_count.get(dj_id, 0),
+                'suggested': 0,
+                'total_tarif': 0
+            }
+        dj_summary[dj_id]['suggested'] += 1
+        dj_summary[dj_id]['total_tarif'] += s['tarif']
+
+    return jsonify({
+        'success': True,
+        'suggestions': suggestions,
+        'dj_summary': list(dj_summary.values()),
+        'total_dates': len(dates_to_fill),
+        'filled_dates': len(suggestions)
+    })
+
+
+# Route validation bulk des suggestions
+@app.route('/admin/bulk-assign', methods=['POST'])
+@login_required
+def admin_bulk_assign():
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    data = request.get_json()
+    assignments_data = data.get('assignments', [])
+
+    created = 0
+    errors = []
+
+    for item in assignments_data:
+        try:
+            day_date = datetime.strptime(item['date'], '%Y-%m-%d').date()
+            dj_id = item['dj_id']
+            time_slot = item['time_slot']
+
+            # Vérifier que le DJ a bien une dispo
+            avail = Availability.query.filter_by(
+                user_id=dj_id,
+                date=day_date,
+                is_available=True
+            ).first()
+            if not avail:
+                errors.append(f"{item['date']}: DJ non disponible")
+                continue
+
+            # Vérifier pas de conflit de slot
+            existing = Assignment.query.filter_by(
+                date=day_date,
+                time_slot=time_slot
+            ).all()
+            if time_slot == 'peaktime_duo':
+                if len(existing) >= 2:
+                    errors.append(f"{item['date']}: Slot peaktime_duo déjà plein")
+                    continue
+            elif existing:
+                errors.append(f"{item['date']}: Slot {time_slot} déjà pris")
+                continue
+
+            # Vérifier que le DJ n'est pas déjà assigné ce jour
+            dj_existing = Assignment.query.filter_by(
+                date=day_date,
+                user_id=dj_id
+            ).first()
+            if dj_existing:
+                errors.append(f"{item['date']}: DJ déjà assigné")
+                continue
+
+            tarif = calculate_tarif(day_date, time_slot)
+            assignment = Assignment(
+                user_id=dj_id,
+                date=day_date,
+                time_slot=time_slot,
+                tarif=tarif,
+                created_by=current_user.id
+            )
+            db.session.add(assignment)
+            created += 1
+
+        except Exception as e:
+            errors.append(f"{item.get('date', '?')}: {str(e)}")
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Erreur DB: {str(e)}'})
+
+    return jsonify({
+        'success': True,
+        'created': created,
+        'errors': errors
+    })
+
+
 # Route calendrier DJ individuel (admin)
 @app.route('/admin/dj-calendar/<int:dj_id>')
 @login_required
@@ -1089,17 +1425,17 @@ def admin_export_planning_pdf():
 @login_required
 def planning_mensuel():
     """Planning mensuel en lecture seule pour les DJs"""
-    from datetime import datetime
+    from datetime import datetime, date as date_obj
     from calendar import monthrange
-    
+
     # Récupérer le mois demandé (ou mois actuel)
     year = request.args.get('year', datetime.now().year, type=int)
     month = request.args.get('month', datetime.now().month, type=int)
-    
-    # Calculer les dates du mois
-    first_day = datetime(year, month, 1)
+
+    # Calculer les dates du mois (utiliser date, pas datetime, pour matcher le type db.Date)
+    first_day = date_obj(year, month, 1)
     last_day_num = monthrange(year, month)[1]
-    last_day = datetime(year, month, last_day_num)
+    last_day = date_obj(year, month, last_day_num)
     
     # Récupérer UNIQUEMENT les assignments (pas les disponibilités)
     assignments = Assignment.query.filter(
@@ -1112,7 +1448,7 @@ def planning_mensuel():
     current_date = first_day
     while current_date <= last_day:
         date_str = current_date.strftime('%Y-%m-%d')
-        day_assignments = [a for a in assignments if a.date == current_date.date()]
+        day_assignments = [a for a in assignments if a.date == current_date]
         planning_by_date[date_str] = {
             'date': current_date,
             'assignments': day_assignments,
@@ -1120,7 +1456,28 @@ def planning_mensuel():
             'is_weekend': current_date.weekday() in [3, 4, 5]  # Jeu/Ven/Sam
         }
         current_date = current_date + timedelta(days=1)
-    
+
+    # Organiser par semaines (lundi = début de semaine)
+    weeks = []
+    current_date = first_day
+    # Remplir les jours vides avant le 1er du mois
+    first_weekday = first_day.weekday()  # 0=lundi
+    current_week = [None] * first_weekday
+
+    while current_date <= last_day:
+        date_str = current_date.strftime('%Y-%m-%d')
+        current_week.append(planning_by_date[date_str])
+        if len(current_week) == 7:
+            weeks.append(current_week)
+            current_week = []
+        current_date = current_date + timedelta(days=1)
+
+    # Remplir les jours vides après la fin du mois
+    if current_week:
+        while len(current_week) < 7:
+            current_week.append(None)
+        weeks.append(current_week)
+
     # Mois suivant/précédent
     prev_month = month - 1 if month > 1 else 12
     prev_year = year if month > 1 else year - 1
@@ -1129,6 +1486,7 @@ def planning_mensuel():
     
     return render_template('planning_mensuel.html',
                          planning_by_date=planning_by_date,
+                         weeks=weeks,
                          current_month=datetime(year, month, 1),
                          prev_month=prev_month,
                          prev_year=prev_year,

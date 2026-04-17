@@ -7,8 +7,12 @@ db = SQLAlchemy()
 
 def calculate_tarif(date, time_slot):
     """Calculer le tarif selon le jour et le créneau"""
+    # Peaktime à 2 : tarif fixe 100€ par DJ quel que soit le jour
+    if time_slot == 'peaktime_duo':
+        return 100
+
     day_of_week = date.weekday()  # 0=Lundi, 3=Jeudi, 4=Vendredi, 5=Samedi
-    
+
     # Jeudi (3)
     if day_of_week == 3:
         if time_slot == 'complete':
@@ -17,7 +21,7 @@ def calculate_tarif(date, time_slot):
             return 40
         elif time_slot == 'peaktime':
             return 80
-    
+
     # Vendredi (4) et Samedi (5)
     elif day_of_week in [4, 5]:
         if time_slot == 'complete':
@@ -26,7 +30,7 @@ def calculate_tarif(date, time_slot):
             return 50
         elif time_slot == 'peaktime':
             return 150
-    
+
     # Autres jours (Dimanche à Mercredi)
     else:
         if time_slot == 'complete':
@@ -35,7 +39,7 @@ def calculate_tarif(date, time_slot):
             return 30
         elif time_slot == 'peaktime':
             return 70
-    
+
     return 0
 
 class User(UserMixin, db.Model):
@@ -75,7 +79,7 @@ class Availability(db.Model):
             user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
             date = db.Column(db.Date, nullable=False)
             is_available = db.Column(db.Boolean, default=True)
-            time_slot = db.Column(db.String(20), default='complete')  # 'complete', 'warmup', 'peaktime'
+            time_slot = db.Column(db.String(20), default='complete')  # 'complete', 'warmup', 'peaktime', 'peaktime_duo'
             notes = db.Column(db.String(200))
             created_at = db.Column(db.DateTime, default=datetime.utcnow)
             updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -95,16 +99,16 @@ class Assignment(db.Model):
             id = db.Column(db.Integer, primary_key=True)
             user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
             date = db.Column(db.Date, nullable=False)
-            time_slot = db.Column(db.String(20), default='complete')  # 'complete', 'warmup', 'peaktime'
+            time_slot = db.Column(db.String(20), default='complete')  # 'complete', 'warmup', 'peaktime', 'peaktime_duo'
             tarif = db.Column(db.Integer, default=0)  # Tarif calculé automatiquement
             notes = db.Column(db.String(200))
             created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
             created_at = db.Column(db.DateTime, default=datetime.utcnow)
             updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-            
-            # Index
+
+            # Index - unique sur (date, time_slot, user_id) pour permettre peaktime_duo avec 2 DJs
             __table_args__ = (
-                db.UniqueConstraint('date', 'time_slot', name='unique_date_timeslot_assignment'),
+                db.UniqueConstraint('date', 'time_slot', 'user_id', name='unique_date_timeslot_user_assignment'),
                 db.Index('idx_assignment_date', 'date'),
             )
             

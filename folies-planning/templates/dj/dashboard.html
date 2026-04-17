@@ -117,6 +117,7 @@
                                         {% if day.time_slot == 'complete' %}Complete
                                         {% elif day.time_slot == 'warmup' %}Warm-up
                                         {% elif day.time_slot == 'peaktime' %}Peak
+                                        {% elif day.time_slot == 'peaktime_duo' %}Peak x2
                                         {% endif %}
                                     </span>
                                     {% else %}
@@ -158,6 +159,7 @@
                             {% if assignment.time_slot == 'complete' %}Soiree complete (00h-6h)
                             {% elif assignment.time_slot == 'warmup' %}Warm-up (00h-2h)
                             {% elif assignment.time_slot == 'peaktime' %}Peak time (2h-6h)
+                            {% elif assignment.time_slot == 'peaktime_duo' %}Peak time a 2 (2h-6h)
                             {% endif %}
                             &mdash;
                             <span style="color: var(--success); font-weight: 600;">{{ assignment.tarif }}&euro;</span>
@@ -209,6 +211,9 @@ function toggleAvailability(date, currentStatus) {
                             </button>
                             <button class="btn btn-ghost" onclick="saveAvailability('${date}', true, 'peaktime')">
                                 <i class="fas fa-fire me-2"></i>Peak time (2h-6h)
+                            </button>
+                            <button class="btn btn-ghost" onclick="saveAvailability('${date}', true, 'peaktime_duo')" style="border-left: 3px solid var(--magenta);">
+                                <i class="fas fa-user-group me-2" style="color: var(--magenta);"></i>Peak time a 2 (2h-6h) - 100&euro;
                             </button>
                             <hr style="border-color: var(--border);">
                             <button class="btn btn-danger-custom" onclick="saveAvailability('${date}', false, 'complete')">
